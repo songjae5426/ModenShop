@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+ "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+ <mapper namespace="com.songjae.modenshop.member.general.repository.GeneralMemberRepository">
+ 	<select id="existsByEmail" parameterType="string" resultType="boolean">
+        SELECT EXISTS (
+            SELECT 1
+            FROM general_member
+            WHERE email = #{email}
+        )
+    </select>
+ 	<select id="existsByNickName" parameterType="string" resultType="boolean">
+        SELECT EXISTS (
+            SELECT 1
+            FROM general_member
+            WHERE email = #{nickName}
+        )
+    </select>
+ 	<select id="existsByPhoneNumber" parameterType="string" resultType="boolean">
+        SELECT EXISTS (
+            SELECT 1
+            FROM general_member
+            WHERE email = #{phoneNumber}
+        )
+    </select>
+ 	<select id="selectIdAndPasswordByEmail" parameterType="string" resultType="com.songjae.modenshop.member.general.domain.GeneralMember">
+        SELECT 
+        	`id`
+        , `password`
+        FROM `general_member`
+        WHERE email = #{email}
+    </select>
+    
+    <insert id="insertGeneralMemberInfo" parameterType="com.songjae.modenshop.member.general.domain.GeneralMember">
+    		INSERT INTO general_member (
+	        email
+	        , password
+	        , name
+	        , nickName
+	        , phoneNumber
+	        , postCode
+	        , address
+	        , detailAddress
+	        , extraAddress) 
+        VALUES (
+	        #{email}
+	        , #{password}
+	        , #{name}
+	        , #{nickName}
+	        , #{phoneNumber}
+	        , #{postCode}
+	        , #{address}
+	        , #{detailAddress}
+	        , #{extraAddress}
+    		)
+    </insert>
+ </mapper>

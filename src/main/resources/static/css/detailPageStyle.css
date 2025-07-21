@@ -1,0 +1,45 @@
+@charset "UTF-8";
+
+
+.product-img-box {
+    /*height: 50vh;*/
+    height: 500px;
+}
+
+.profile-img-box{
+	width: 40px;
+	height: 40px;
+}
+
+.product-description-box{
+	min-height: 500px;
+}
+
+.non-product-description-box{
+	height: 400px;
+}
+
+.review-modal-textarea{
+	resize: none; 
+}
+
+.star {
+  font-size: 2rem;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.rating {
+  direction: rtl; /* 오른쪽부터 렌더링 */
+}
+
+/*현재 마우스가 올려져있는 star에 hover + 같은 부모 안에서 hover된 별 뒤쪽에 있는 형제들*/
+.star:hover,
+.star:hover ~ .star {
+  color: #ffc107;
+}
+
+
+
+
+
+

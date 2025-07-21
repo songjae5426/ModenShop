@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+ "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+ <mapper namespace="com.songjae.modenshop.cart.repository.CartRepositoryByMybatise">
+ 	<!--  <select id="selectProductAndCartFlatDtoByGenearMemberId" parameterType="long" resultType="ProductAndCartFlatDto">
+ 		SELECT
+ 		, product.productId
+ 		, product.productName
+ 		, product.salesPrice
+ 		, product.productMainImg
+ 		, product.deliveryCost
+ 		, cart.selectedSize
+ 		, cart.selectedQuantity`
+ 		, cart.salesPrice AS cartPrice
+ 		FROM `product`
+ 		JOIN `cart`
+ 		ON product.id = cart.productId
+ 		WHERE cart.generalMemberId = #{generalMemberId}
+ 	</select>-->
+ </mapper>

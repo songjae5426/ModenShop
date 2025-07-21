@@ -1,0 +1,39 @@
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<div th:fragment="alarmModal" class="modal fade" id="alarmModal" data-backdrop="static"
+	data-keyboard="false" tabindex="-1"
+	aria-labelledby="staticBackdropLabel" aria-hidden="true">
+	<div class="modal-dialog modal-dialog-centered">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 id="alarmModalTitle" class="modal-title">알림</h5>
+				<button type="button" class="close" data-dismiss="modal"
+					aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
+			</div>
+			<div class="modal-body">
+				<div id="alarmModalText">내용</div>
+			</div>
+			<div class="modal-footer">
+				<button id="checkBtn" type="button" class="btn btn-secondary" data-dismiss="modal">확인</button>
+			</div>
+		</div>
+	</div>
+</div>
+<script th:fragment="alarmModalScript">
+	function settingAndShowAlarmModal(title, text, btnText, btnUrl){
+		$("#alarmModalTitle").text(title);
+		$("#alarmModalText").text(text);
+		if(btnText != null){
+			$("#checkBtn").text(btnText);
+		}
+		if(btnUrl != null){
+			$("#checkBtn").off("click").on("click", function(){
+				location.href = btnUrl;
+			});
+		}
+		$("#alarmModal").modal("show");
+	}
+	
+</script>
+</html>

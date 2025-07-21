@@ -1,0 +1,28 @@
+@charset "UTF-8";
+
+.img-box{
+	height: 250px;
+}
+
+.category-discountRate{
+	top: 10px; 
+	left: 10px; 
+	z-index: 1;
+}
+
+.hover-effect:hover {
+	transform: translateY(-3px);
+	transition: 0.2s ease-in-out;
+	box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+	background-color: #dcdcdc;
+	cursor: pointer;
+}
+
+.line{
+	width: 80px;
+	height: 3px; 
+	background-color: #007bff; 
+	border-radius: 5px;
+}
+
+

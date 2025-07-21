@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+	<!-- 옵션 체인지 모달 -->
+	<div th:fragment="optionChangeModal" class="modal fade" id="optionChangeModal" data-backdrop="static"
+		data-keyboard="false" tabindex="-1"
+		aria-labelledby="staticBackdropLabel" aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title">옵션 변경</h5>
+					<button type="button" class="close" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body">
+					<select class="form-control mb-2">
+						<option>사이즈 변경</option>
+						<option>S</option>
+						<option>M</option>
+						<option>L</option>
+					</select>
+					<div
+						class="rounded-lg d-flex border justify-content-between p-2 align-items-center">
+						<div class="d-flex border rounded-lg">
+							<button data-toggle="modal" data-target="#alarmModal"
+								type="button"
+								class="option-change-modal-quantity-btn d-flex align-items-center justify-content-center rounded-lg border-0">-</button>
+							<div class="px-2">1</div>
+							<button type="button"
+								class="option-change-modal-quantity-btn d-flex align-items-center justify-content-center rounded-lg border-0 btn-light">+</button>
+						</div>
+						<div>가격</div>
+					</div>
+
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-success" data-dismiss="modal">취소</button>
+					<button type="button" class="btn btn-dark" data-dismiss="modal">변경하기</button>
+				</div>
+			</div>
+		</div>
+	</div>
+</html>

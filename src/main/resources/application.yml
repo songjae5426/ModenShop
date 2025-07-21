@@ -1,0 +1,39 @@
+spring:
+  profiles:
+    include: secret
+  application:
+    name: ModenShop
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ${mysql.url}
+    username: ${mysql.username}
+    password: ${mysql.password}
+  thymeleaf:
+    cache: false
+  jpa:
+    hibernate:
+      ddl-auto: none
+      naming:
+        implicit-strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyLegacyJpaImpl
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+  mail:
+    host: smtp.naver.com
+    port: 587
+    username: ${mail.username}
+    password: ${mail.password}
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+      
+
+mybatis:
+  mapper-locations: mappers/*Mapper.xml
+
+
+server:
+  tomcat:
+      max-http-form-post-size: -1
+      max-part-count: 1000  # 허용할 최대 파트 수  
+  servlet:
+    session:
+      timeout: 30m

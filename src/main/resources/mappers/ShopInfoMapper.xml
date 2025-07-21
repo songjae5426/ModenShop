@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+ "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+ <mapper namespace="com.songjae.modenshop.member.manager.repository.ShopInfoRepository">
+ 	<update id="updatePhoneNumberById" parameterType="com.songjae.modenshop.member.manager.domain.ShopInfo">
+ 		UPDATE `shop_info`
+ 		SET `shopPhoneNumber` = #{shopPhoneNumber}
+ 		WHERE `id` = #{id}
+ 	</update>
+ 	
+ 	
+ 	<update id="updateAddressById" parameterType="com.songjae.modenshop.member.manager.domain.ShopInfo">
+ 		UPDATE `shop_info`
+ 		SET 
+ 		`shopPostCode` = #{shopPostCode}
+ 		, `shopAddress` = #{shopAddress}
+ 		, `shopDetailAddress` = #{shopDetailAddress}
+ 		, `shopExtraAddress` = #{shopExtraAddress}
+ 		WHERE `id` = #{id}
+ 	</update>
+ </mapper>

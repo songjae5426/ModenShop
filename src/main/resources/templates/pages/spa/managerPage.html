@@ -1,0 +1,2088 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<head>
+<meta charset="UTF-8">
+<title layout:fragment="title">관리자 페이지</title>
+<link rel="stylesheet"
+	href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css"
+	integrity="sha384-xOolHFLEh07PJGoPkLv1IbcEPTNtaed2xpHsD9ESMhqIYd0nLMwNLD69Npy4HI+N"
+	crossorigin="anonymous">
+<link rel="stylesheet" href="/css/commonStyle.css">
+<link rel="stylesheet" href="/css/managerPageStyle.css">
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"
+	integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+	crossorigin="anonymous"></script>
+<script
+	src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"
+	integrity="sha384-Fy6S3B9q64WdZWQUiU+q4/2Lc9npb8tCaSX9FK7E8HnRr0Jz8D6OP9dO5Vg3Q9ct"
+	crossorigin="anonymous"></script>
+<script
+	src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+<link
+	href="https://cdn.jsdelivr.net/npm/summernote@0.9.0/dist/summernote-bs4.min.css"
+	rel="stylesheet">
+<script
+	src="https://cdn.jsdelivr.net/npm/summernote@0.9.0/dist/summernote-bs4.min.js"></script>
+</head>
+<body>
+	<div id="modalBox">
+		<!-- 프로필 이미지 체인지 모달 -->
+		<th:block th:replace="fragments/imgUploadModal :: imgUploadModal"></th:block>
+		<!-- 알람 모달 -->
+		<th:block th:replace="fragments/alarmModal :: alarmModal"></th:block>
+	</div>
+
+	<section id="loginContent" class="vh-100">
+		<article class="w-100 h-100">
+			<div class="col-12 h-100">
+				<div class="d-flex justify-content-center h-100 align-items-center">
+					<div class="col-4">
+						<div class="h4 text-center py-3 m-0">관리자 페이지 로그인</div>
+						<div class="mb-2">
+							<label>이메일</label> <input id="loginEmailInput" type="text"
+								class="form-control" placeholder="이메일을 입력해주세요..">
+							<div id="emailAlarmText" class="form-text text-danger d-none">
+								<small>가입된 이메일이 없습니다</small>
+							</div>
+						</div>
+						<div class="mb-2">
+							<label>비밀번호</label> <input id="loginPasswordInput"
+								type="password" class="form-control"
+								placeholder="비밀번호를 입력해주세요..">
+							<div id="passwordAlarmText" class="form-text text-danger d-none">
+								<small>비밀번호가 일치하지 않습니다</small>
+							</div>
+						</div>
+						<button id="loginBtn" type="button" class="btn btn-primary w-100">확인</button>
+					</div>
+				</div>
+			</div>
+		</article>
+	</section>
+	<script th:replace="fragments/alarmModal :: alarmModalScript"></script>
+	<script th:replace="fragments/imgUploadModal :: imgUploadModalScript"></script>
+	<script>
+		loginEvent();
+		// ---------------- 유틸 함수 ---------
+		// -넣어주기
+		function formatPhoneNumber(num) {
+		  num = num.replace(/[^0-9]/g, ''); // 숫자만 남기기
+		
+		  if (num.startsWith('02')) {
+		    return num.replace(/(\d{2})(\d{3,4})(\d{4})/, '$1-$2-$3');
+		  } else if (num.length === 10) {
+		    return num.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
+		  } else if (num.length === 11) {
+		    return num.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
+		  } else {
+		    return num; 
+		  }
+		}
+		function daumAddressService() {
+			new daum.Postcode(
+				{
+					oncomplete : function(data) {
+						// 팝업에서 검색결과 항목을 클릭했을때 실행할 코드를 작성하는 부분.
+
+						// 각 주소의 노출 규칙에 따라 주소를 조합한다.
+						// 내려오는 변수가 값이 없는 경우엔 공백('')값을 가지므로, 이를 참고하여 분기 한다.
+						let addr = ''; // 주소 변수
+						let extraAddr = ''; // 참고항목 변수
+
+						//사용자가 선택한 주소 타입에 따라 해당 주소 값을 가져온다.
+						if (data.userSelectedType === 'R') { // 사용자가 도로명 주소를 선택했을 경우
+							addr = data.roadAddress;
+						} else { // 사용자가 지번 주소를 선택했을 경우(J)
+							addr = data.jibunAddress;
+						}
+
+						// 사용자가 선택한 주소가 도로명 타입일때 참고항목을 조합한다.
+						if (data.userSelectedType === 'R') {
+							// 법정동명이 있을 경우 추가한다. (법정리는 제외)
+							// 법정동의 경우 마지막 문자가 "동/로/가"로 끝난다.
+							if (data.bname !== ''
+									&& /[동|로|가]$/g.test(data.bname)) {
+								extraAddr += data.bname;
+							}
+							// 건물명이 있고, 공동주택일 경우 추가한다.
+							if (data.buildingName !== ''
+									&& data.apartment === 'Y') {
+								extraAddr += (extraAddr !== '' ? ', '
+										+ data.buildingName
+										: data.buildingName);
+							}
+							// 표시할 참고항목이 있을 경우, 괄호까지 추가한 최종 문자열을 만든다.
+							if (extraAddr !== '') {
+								extraAddr = ' (' + extraAddr + ')';
+							}
+							// 조합된 참고항목을 해당 필드에 넣는다.
+							extraAddr = $.trim(extraAddr); // 공백 제거
+							$("#extraAddress").val(extraAddr);
+
+						} else {
+							$("#extraAddress").val("");
+						}
+
+						// 우편번호와 주소 정보를 해당 필드에 넣는다.
+						$("#postCode").val(data.zonecode);
+						$("#address").val(addr);
+						// 커서를 상세주소 필드로 이동한다.
+						$("#detailAddress").focus();
+					}
+				}).open();
+		}
+		
+		function summerNote(tagsStr, html){
+			let imgSrcArrayTemp = [];
+			$(tagsStr).summernote({
+				  // 에디터 크기 설정
+				  height: 'calc(100vh - 200px)',
+				  minHeight: 'calc(100vh - 200px)',
+				  maxHeight: 'calc(100vh - 200px)',
+				  width: '100%',
+				  // 에디터 한글 설정
+				  lang: 'ko-KR',
+				  // 에디터에 커서 이동 (input창의 autofocus라고 생각하시면 됩니다.)
+				  toolbar: [
+					    // 글자 크기 설정
+					    ['fontsize', ['fontsize']],
+					    // 글자 [굵게, 기울임, 밑줄, 취소 선, 지우기]
+					    ['style', ['bold', 'italic', 'underline','strikethrough', 'clear']],
+					    // 글자색 설정
+					    ['color', ['color']],
+					    // 표 만들기
+					    ['table', ['table']],
+					    // 서식 [글머리 기호, 번호매기기, 문단정렬]
+					    ['para', ['ul', 'ol', 'paragraph']],
+					    // 줄간격 설정
+					    ['height', ['height']],
+					    // 이미지 첨부
+					    ['insert',['picture']]
+					  ],
+					  // 추가한 글꼴
+					fontNames: ['Arial', 'Arial Black', 'Comic Sans MS', 'Courier New','맑은 고딕','궁서','굴림체','굴림','돋음체','바탕체'],
+					 // 추가한 폰트사이즈
+					fontSizes: ['8','9','10','11','12','14','16','18','20','22','24','28','30','36','50','72','96'],
+			        // focus는 작성 페이지 접속시 에디터에 커서를 위치하도록 하려면 설정해주세요.
+					focus : true,
+			        // callbacks은 이미지 업로드 처리입니다.
+					callbacks : { 
+						onInit: function(){
+							if(html != null){
+								$(tagsStr).summernote("code", html);
+							}
+						},
+						// 이 함수는 이미지가 삽입 될때마다 이벤트가 발생한다(기본적으로 이미지 파일일때만 반응 필터일 되어있음)
+						onImageUpload : function(files) { 
+			                // 다중 이미지 처리를 위해(한번에 여러 이미지를 선택해서 삽입할수있다)
+							for (let i = 0; i < files.length; i++) {
+								summerNoteImageUploader(files[i]);
+							}
+						}
+						
+					}
+			  });
+		}
+		
+		
+		
+		
+		
+		function summerNoteImageUploader(file) {
+			let formData = new FormData();
+			formData.append('imgFile', file);	// form데이터 객체에 이미지파일 추가
+			$.ajax({  
+				url : '/moden-shop/manager/summer-note/img/temp/upload/session/check',
+				type : "post",
+				data : formData,
+				contentType : false,				// 서버로 넘기는 값의 contentType을 지정 => 기본적으로 ajax는 contentType이 true인데 true이면 무조건 application/x-www-form-urlencoded형식으로 contentType을 지정됨  => false이면 알아서 알맞은 contentType으로 지정해서 보내줌
+				processData : false,				// 서버로 넘기는 데이터를 인코딩에서 설정한 타입으로 변환하는 속성 => 기본 값은 true => ajax는 기본적으로 data속성 값(서버로 넘기는 값)을 application/x-www-form-urlencoded 형식의 문자열로 변환함 그걸 막음
+				enctype : 'multipart/form-data',  // 서버로 넘기는 데이터의 타입 지정
+				success : function(response) { 
+					//img 태그 생성
+					let img = document.createElement("img");	
+					img.src = response.url;	// 서버로 받은 url
+					img.style.width = "100%";
+					// 커서 위치에 이미지 태그 삽입
+					$("#summernote").summernote("insertNode", img);
+				},
+				error: function(xhr){
+					switch(xhr.status){
+						case 401:
+							settingAndShowAlarmModal("알람", "세션이 만료되었습니다. 다시 한번 로그인 부탁드립니다", null, null);
+							$("#startContent").remove();
+							$("#modalBox").after(createManagerPageLoginContent());
+							loginEvent();
+						break;
+					}
+				}
+			});
+		}
+		
+			
+		
+		// -------------------------------- 이벤트 + ajax -----------------------------
+		
+		
+		
+		let globalSummerNoteHtml = null;
+		function productExplanationWriterEvent(
+				productNameInput,
+				productCategoryRadio,
+				productRegularPriceInput,
+				productSalesPriceInput,
+				productDeliveryCostInput,
+				sSizeCountInput,
+				mSizeCountInput,
+				lSizeCountInput,
+				productMainImg){
+			
+			$("#summernoteBoxBackBtn").off("click").on("click", function(){
+				let summerNoteContentHtml = $("#summernote").summernote("code");
+				if(!(!summerNoteContentHtml || summerNoteContentHtml === "" || summerNoteContentHtml=== "<p><br></p>")){
+					// addProductInfo에 있는 변수
+					globalSummerNoteHtml = $("#summernote").summernote("code");
+				}
+				$("#content").html(createAddProductInfoContent());
+				// 원래 값 유지하기 위해서
+				$("#productNameInput").val(productNameInput);
+				$(`input[name="productCategory"][value="${productCategoryRadio}"]`).prop("checked", true);
+				$("#productRegularPriceInput").val(productRegularPriceInput);
+				$("#productSalesPriceInput").val(productSalesPriceInput);
+				$("#productDeliveryCostInput").val(productDeliveryCostInput);
+				$("#sSizeCountInput").val(sSizeCountInput);
+				$("#mSizeCountInput").val(mSizeCountInput);
+				$("#lSizeCountInput").val(lSizeCountInput);
+				$("#imgSelectedIcon").removeClass("d-none");
+				addProductInfoEvnet();
+			});
+			$("#productUploda").off("click").on("click", function(){
+				// html을 문자열로 가져옴
+				let summerNoteContentHtml = $("#summernote").summernote("code");
+				let formData = new FormData();
+				formData.append("summerNoteContentHtml", summerNoteContentHtml);
+				formData.append("productName", productNameInput);
+				formData.append("productCategory", productCategoryRadio);
+				formData.append("productRegularPrice", productRegularPriceInput);
+				formData.append("productSalesPrice", productSalesPriceInput);
+				formData.append("productDeliveryCost", productDeliveryCostInput);
+				formData.append("sSizeCount", sSizeCountInput);
+				formData.append("mSizeCount", mSizeCountInput);
+				formData.append("lSizeCount", lSizeCountInput);
+				formData.append("productMainImgFile", productMainImg);	// form데이터 객체에 이미지파일 추가
+				
+				// 썸머노트 내용이 없으면
+				if(!summerNoteContentHtml || summerNoteContentHtml === "" || summerNoteContentHtml=== "<p><br></p>"){
+					settingAndShowAlarmModal("알람", "상세설명을 입력해주세요", null, null);
+					return;
+				}
+				$.ajax({
+					url: "/moden-shop/manager/product/upload/session/check",
+					type: "post",
+					data: formData,
+					enctype: "multipart/form-data",
+					processData: false,
+					contentType: false,
+					success: function(response){
+						if(response.success){
+							settingAndShowAlarmModal("알람", "상품이 업로드가 완료 되었습니다", null, null);
+							resetImgUploadModal();
+							globalSummerNoteHtml = null;
+							$("#content").html(createProductManagementContent());
+							productManagementEvent(null);
+						}else{
+							settingAndShowAlarmModal("알람", "상품이 업로드에 문제가 발생하였습니다...", null, null);
+						}
+					},
+					error: function(xhr){
+						console.log("상품 업로드 ajax 에러 : " + xhr.status);
+						switch(xhr.status){
+							case 401:
+								settingAndShowAlarmModal("알람", "세션이 만료되었습니다. 다시 한번 로그인 부탁드립니다", null, null);
+								$("#startContent").remove();
+								$("#modalBox").after(createManagerPageLoginContent());
+								loginEvent();
+							break;
+						}
+					}
+				});
+			});
+			
+		}
+		
+		
+		
+		
+		
+		
+		function addProductInfoEvnet(){
+			let productMainImgFile = null;
+			// 상품정보 추가 이벤트가 시작 될때마다 이미지 모달에 선택된 이미지를 가져옴
+			imgUploadModalEvenet(function(selectedImgFile){
+				productMainImgFile = selectedImgFile;
+			});
+			
+			$("#productMainImgUploadBtn").off("click").on("click", function(){
+				settingImgUploadModalTitle("상품 썸네일 업로드");
+				$("#imgUploadModal").modal("show");
+				imgUploadModalEvenet(function(selectedImgFile){
+					if(!(selectedImgFile === undefined)){
+						$("#imgSelectedIcon").removeClass("d-none");
+					}
+					productMainImgFile = selectedImgFile;
+				});
+			});
+			
+			
+			$("#productInfoNextBtn").off("click").on("click", function(){
+				let productNameInput = $("#productNameInput").val();
+				let productCategoryRadio = $('input[name="productCategory"]:checked').val();
+				let productRegularPriceInput = Number($("#productRegularPriceInput").val());
+				let productSalesPriceInput =  Number($("#productSalesPriceInput").val());
+				let productDeliveryCostInput = $("#productDeliveryCostInput").val();
+				let sSizeCountInput = $("#sSizeCountInput").val();
+				let mSizeCountInput = $("#mSizeCountInput").val();
+				let lSizeCountInput = $("#lSizeCountInput").val();
+				let productMainImg = productMainImgFile;
+
+				// 유효성 검사
+				if(productNameInput == ""){
+					settingAndShowAlarmModal("알람", "상품명을 입력해주세요", null, null);
+					return;
+				}
+				if(productCategoryRadio == null){
+					settingAndShowAlarmModal("알람", "상품 카테고리를 체크해주세요", null, null);
+					return;
+				}
+				if(productRegularPriceInput == ""){
+					settingAndShowAlarmModal("알람", "정가을 입력해주세요", null, null);
+					return;
+				}
+				if(productSalesPriceInput == ""){
+					settingAndShowAlarmModal("알람", "판매가를 입력해주세요", null, null);
+					return;
+				}
+				if(productRegularPriceInput < productSalesPriceInput){
+					settingAndShowAlarmModal("알람", "정가가 판매가보다 적습니다..", null, null);
+					return;
+				}
+				if(productDeliveryCostInput == ""){
+					settingAndShowAlarmModal("알람", "배달비를 입력해주세요", null, null);
+					return;
+				}
+				if(sSizeCountInput == ""){
+					settingAndShowAlarmModal("알람", "사이즈S수량을 입력해주세요", null, null);
+					return;
+				}
+				if(mSizeCountInput == ""){
+					settingAndShowAlarmModal("알람", "사이즈M수량을 입력해주세요", null, null);
+					return;
+				}
+				if(lSizeCountInput == ""){
+					settingAndShowAlarmModal("알람", "사이즈L수량을 입력해주세요", null, null);
+					return;
+				}
+				if(productMainImg == null){
+					settingAndShowAlarmModal("알람", "썸네일 사진을 선택해주세요", null, null);
+					return;
+				}
+				$("#content").html(createProductExplanationWriterContent());
+				
+				if(globalSummerNoteHtml != null){
+					summerNote("#summernote", globalSummerNoteHtml);
+				}else{
+					summerNote("#summernote", null);		// 썸머노트 함수
+				}
+				
+				// 상세페이지 작성 이벤트
+				productExplanationWriterEvent(
+						productNameInput,
+						productCategoryRadio,
+						productRegularPriceInput,
+						productSalesPriceInput,
+						productDeliveryCostInput,
+						sSizeCountInput,
+						mSizeCountInput,
+						lSizeCountInput,
+						productMainImg);
+			});
+			
+			$("#addProductInfoContentBackBtn").off("click").on("click", function(){
+				$("#content").html(createProductManagementContent());
+				productManagementEvent(null);
+			});
+			
+		}
+		
+		// 상품 관리 화면 이벤트
+		function productManagementEvent(productId){
+			$("#searchBtn").off("click").on("click", function(){
+				let searchText = $("#searchText").val();
+				$.ajax({
+					url: "/moden-shop/manager/product/search/session/check",
+					type: "get",
+					data: {"productName": searchText},
+					success: function(response){
+						$("#productManagementTbody").empty();
+						if(response.serachResultEmpty){
+							$("#notSearchText").removeClass("d-none");
+							$("#productListTable").addClass("d-none");
+							$("#notProductText").addClass("d-none");
+						}else{
+							$("#notSearchText").addClass("d-none");
+							$("#productListTable").removeClass("d-none");
+							$("#notProductText").addClass("d-none");
+							for(let productManageListItemDto of response.productManageListItemDtoList){
+								$("#productManagementTbody").append(createProductManagementTableRow(productManageListItemDto));
+							}
+						}
+					},
+					error: function(xhr){
+						switch(xhr.status){
+							case 401:
+								settingAndShowAlarmModal("알람", "세션이 만료되었습니다. 다시 한번 로그인 부탁드립니다", null, null);
+								$("#startContent").remove();
+								$("#modalBox").after(createManagerPageLoginContent());
+								loginEvent();
+							break;
+						}
+					}
+				});
+			});
+			
+			// 상품 목록 받아오기
+			$.ajax({
+				url: "/moden-shop/manager/product/list/session/check",
+				type: "get",
+				success: function(response){
+					if(!response.emptyList){
+						let productManageListItemDtoList = response.productManageListItemDtoList
+						for(let productManageListItemDto of productManageListItemDtoList){
+							$("#productManagementTbody").append(createProductManagementTableRow(productManageListItemDto));
+							$("#notProductText").addClass("d-none");
+							$("#notSearchText").addClass("d-none");
+							$("#productListTable").removeClass("d-none");
+						}
+					}else{
+						$("#notProductText").removeClass("d-none");
+						$("#productListTable").addClass("d-none");
+						$("#notSearchText").addClass("d-none");
+					}
+				},
+				error: function(xhr){
+					console.log("product리스트 받아오기 ajax 에러 : " + xhr.status);
+					switch(xhr.status){
+						case 401:
+							settingAndShowAlarmModal("알람", "세션이 만료되었습니다. 다시 한번 로그인 부탁드립니다", null, null);
+							$("#startContent").remove();
+							$("#modalBox").after(createManagerPageLoginContent());
+							loginEvent();
+						break;
+					}
+				}
+			});
+			// 상품 정보 카드
+			$(document).off("click", ".selected-product-btn").on("click", ".selected-product-btn", function(){
+				let productId = $(this).data("product-id");
+				$.ajax({
+					url: "/moden-shop/manager/product/card/info/session/check",
+					type: "get",
+					data: {"productId": productId},
+					success: function(response){
+						let productName = response.productManageCardItemDto.productName;
+						let productCategory = response.productManageCardItemDto.productCategory;
+						let regularPrice = response.productManageCardItemDto.regularPrice;
+						let discountRate = response.productManageCardItemDto.discountRate;
+						let salesPrice = response.productManageCardItemDto.salesPrice;
+						let deliveryCost = response.productManageCardItemDto.deliveryCost;
+						let productMainImg = response.productManageCardItemDto.productMainImg;
+						for(let productSizeQuantityManageItemDto of response.productSizeQuantityManageItemDtoList){
+							switch(productSizeQuantityManageItemDto.size){
+								case "S":
+									sSizeCount = productSizeQuantityManageItemDto.quantity;
+									break;
+								case "M":
+									mSizeCount = productSizeQuantityManageItemDto.quantity;
+									break;
+								case "L":
+									lSizeCount = productSizeQuantityManageItemDto.quantity;
+									break;
+							}
+						}
+						// 상품 정보 카드 셋팅
+						settingProductInfoCard(
+								productId,
+								productName,
+								productCategory,
+								regularPrice,
+								discountRate,
+								salesPrice,
+								deliveryCost,
+								productMainImg,
+								sSizeCount,
+								mSizeCount,
+								lSizeCount);
+					},
+					error: function(xhr){
+						console.log("productInfo 받아오기 ajax 에러 : " + xhr.status);
+						switch(xhr.status){
+							case 401:
+								settingAndShowAlarmModal("알람", "세션이 만료되었습니다. 다시 한번 로그인 부탁드립니다", null, null);
+								$("#startContent").remove();
+								$("#modalBox").after(createManagerPageLoginContent());
+								loginEvent();
+							break;
+						}
+					}
+				});
+			});
+			
+			if(productId != null){
+				$.ajax({
+					url: "/moden-shop/manager/product/card/info/session/check",
+					type: "get",
+					data: {"productId": productId},
+					success: function(response){
+						let productName = response.productManageCardItemDto.productName;
+						let productCategory = response.productManageCardItemDto.productCategory;
+						let regularPrice = response.productManageCardItemDto.regularPrice;
+						let discountRate = response.productManageCardItemDto.discountRate;
+						let salesPrice = response.productManageCardItemDto.salesPrice;
+						let deliveryCost = response.productManageCardItemDto.deliveryCost;
+						let productMainImg = response.productManageCardItemDto.productMainImg;
+						for(let productSizeQuantityManageItemDto of response.productSizeQuantityManageItemDtoList){
+							switch(productSizeQuantityManageItemDto.size){
+								case "S":
+									sSizeCount = productSizeQuantityManageItemDto.quantity;
+									break;
+								case "M":
+									mSizeCount = productSizeQuantityManageItemDto.quantity;
+									break;
+								case "L":
+									lSizeCount = productSizeQuantityManageItemDto.quantity;
+									break;
+							}
+						}
+						// 상품 정보 카드 셋팅
+						settingProductInfoCard(
+								productId,
+								productName,
+								productCategory,
+								regularPrice,
+								discountRate,
+								salesPrice,
+								deliveryCost,
+								productMainImg,
+								sSizeCount,
+								mSizeCount,
+								lSizeCount);
+					},
+					error: function(xhr){
+						console.log("productInfo 받아오기 ajax 에러 : " + xhr.status);
+						switch(xhr.status){
+							case 401:
+								settingAndShowAlarmModal("알람", "세션이 만료되었습니다. 다시 한번 로그인 부탁드립니다", null, null);
+								$("#startContent").remove();
+								$("#modalBox").after(createManagerPageLoginContent());
+								loginEvent();
+							break;
+						}
+					}
+				});
+			}
+			
+			// 리뷰 버튼
+			$("#reviewBtn").off("click").on("click", function(){
+				$("#content").html(createProductReviewContent());
+				let productId = $(this).data("product-id");
+				
+				productReviewContentEvent(productId);
+			});
+			// 수정 버튼
+			$("#modifyBtn").off("click").on("click",function(){
+				let productId = $(this).data("product-id");
+				$.ajax({
+					url: "/moden-shop/manager/product/modify/info/session/check",
+					type: "get",
+					data: {"productId": productId},
+					success: function(response){
+						$("#content").html(createModifyProductInfoContent());
+						$("#productNameInput").val(response.productManageModifyExistingDataItemDto.productName);
+						$("#productRegularPriceInput").val(response.productManageModifyExistingDataItemDto.regularPrice);
+						$("#productSalesPriceInput").val(response.productManageModifyExistingDataItemDto.salesPrice);
+						$("#productDeliveryCostInput").val(response.productManageModifyExistingDataItemDto.deliveryCost);
+						switch(response.productManageModifyExistingDataItemDto.productCategory){
+							case "OUTER":
+								$("#categoryOuter").prop('checked', true);
+								break;
+							case "TOP":
+								$("#categoryTop").prop('checked', true);
+								break;
+							case "SHIRT":
+								$("#categoryShirt").prop('checked', true);
+								break;
+							case "PANTS":
+								$("#categoryPants").prop('checked', true);
+								break;
+							case "ACCESSORY":
+								$("#categoryAccessory").prop('checked', true);
+								break;
+						}
+						for(let productSizeQuantityManageItemDto of response.productSizeQuantityManageItemDtoList){
+							switch(productSizeQuantityManageItemDto.size){
+								case "S":
+									$("#sSizeCountInput").val(productSizeQuantityManageItemDto.quantity);
+									$("#sSizeCountInput").attr("data-product-size-quantity-id", productSizeQuantityManageItemDto.id);
+									break;
+								case "M":
+									$("#mSizeCountInput").val(productSizeQuantityManageItemDto.quantity);
+									$("#mSizeCountInput").attr("data-product-size-quantity-id", productSizeQuantityManageItemDto.id);
+									break;
+								case "L":
+									$("#lSizeCountInput").val(productSizeQuantityManageItemDto.quantity);
+									$("#lSizeCountInput").attr("data-product-size-quantity-id", productSizeQuantityManageItemDto.id);
+									break;
+							}
+						}
+						// 기존 이미지 설정
+						$("#imgUploadModalImgPreview").attr("src", response.productManageModifyExistingDataItemDto.productMainImg);
+						$("#imgUploadModalImgPreview").removeClass("d-none");
+						$("#imgUploadModalPreviewText").addClass("d-none");
+						let html = response.productManageModifyExistingDataItemDto.productExplanationHtml;
+						modifyProductInfoEvent(
+								html, 
+								productId);
+					},
+					error: function(xhr){
+						console.log("productModifyInfo 받아오기 ajax 에러 : " + xhr.status);
+						switch(xhr.status){
+							case 401:
+								settingAndShowAlarmModal("알람", "세션이 만료되었습니다. 다시 한번 로그인 부탁드립니다", null, null);
+								$("#startContent").remove();
+								$("#modalBox").after(createManagerPageLoginContent());
+								loginEvent();
+							break;
+						}
+					}
+				})
+			});
+			
+			
+			// 삭제 버튼
+			$("#productDelete").off("click").on("click", function(){
+				let productId = $(this).data("product-id");
+				$.ajax({
+					url: "/moden-shop/manager/product/delete/session/check",
+					type: "get",
+					data: {"productId": productId},
+					success: function(response){
+						if(response.success){
+							settingAndShowAlarmModal("알람", "상품이 삭제 되었습니다", null, null);
+							$("#content").html(createProductManagementContent());
+							productManagementEvent(null);
+						}else{
+							settingAndShowAlarmModal("알람", "상품이 삭제에 실패하였습니다", null, null);
+						}
+					},
+					error: function(xhr){
+						console.log("상품 삭제 ajax 에러 : " + xhr.status);
+						switch(xhr.status){
+							case 401:
+								settingAndShowAlarmModal("알람", "세션이 만료되었습니다. 다시 한번 로그인 부탁드립니다", null, null);
+								$("#startContent").remove();
+								$("#modalBox").after(createManagerPageLoginContent());
+								loginEvent();
+							break;
+						}
+					}
+				})
+				
+			});
+			
+			
+			$("#addProductBtn").off("click").on("click", function(){
+				$("#content").html(createAddProductInfoContent());
+				resetImgUploadModal();
+				addProductInfoEvnet();
+			});
+		}
+		
+		function modifyProductExplanationHtml(
+				productNameInput,
+				productCategoryRadio,
+				productRegularPriceInput,
+				productSalesPriceInput,
+				productDeliveryCostInput,
+				sSizeCountInput,
+				mSizeCountInput,
+				lSizeCountInput,
+				productMainImg,
+				sSizeId,
+				mSizeId,
+				lSizeId,
+				productId,
+				html){
+			$("#summernoteBoxBackBtn").off("click").on("click", function(){
+				let summerNoteContentHtml = $("#summernote").summernote("code");
+				if(!(!summerNoteContentHtml || summerNoteContentHtml === "" || summerNoteContentHtml=== "<p><br></p>")){
+					// addProductInfo에 있는 변수
+					globalSummerNoteHtml = $("#summernote").summernote("code");
+				}
+				$("#content").html(createModifyProductInfoContent());
+				// 원래 값 유지하기 위해서
+				$("#productNameInput").val(productNameInput);
+				$(`input[name="productCategory"][value="${productCategoryRadio}"]`).prop("checked", true);
+				$("#productRegularPriceInput").val(productRegularPriceInput);
+				$("#productSalesPriceInput").val(productSalesPriceInput);
+				$("#productDeliveryCostInput").val(productDeliveryCostInput);
+				$("#sSizeCountInput").val(sSizeCountInput);
+				$("#mSizeCountInput").val(mSizeCountInput);
+				$("#lSizeCountInput").val(lSizeCountInput);
+				$("#sSizeCountInput").attr("data-product-size-quantity-id", sSizeId);
+				$("#mSizeCountInput").attr("data-product-size-quantity-id", mSizeId);
+				$("#lSizeCountInput").attr("data-product-size-quantity-id", lSizeId);
+				modifyProductInfoEvent(html, productId);
+			});
+			
+			$("#productUploda").off("click").on("click", function(){
+				let summerNoteContentHtml = $("#summernote").summernote("code");
+				let formData = new FormData();
+				formData.append("summerNoteContentHtml", summerNoteContentHtml);
+				formData.append("productId", productId);
+				formData.append("productName", productNameInput);
+				formData.append("productCategory", productCategoryRadio);
+				formData.append("productRegularPrice", productRegularPriceInput);
+				formData.append("productSalesPrice", productSalesPriceInput);
+				formData.append("productDeliveryCost", productDeliveryCostInput);
+				formData.append("sSizeCount", sSizeCountInput);
+				formData.append("mSizeCount", mSizeCountInput);
+				formData.append("lSizeCount", lSizeCountInput);
+				formData.append("productSizeQuantitySId", sSizeId);
+				formData.append("productSizeQuantityMId", mSizeId);
+				formData.append("productSizeQuantityLId", lSizeId);
+				if (productMainImg != null) {
+				    formData.append("productMainImgFile", productMainImg);
+				} else {
+				    formData.append("productMainImgFile", new Blob([]), "");
+				}
+
+				$.ajax({
+					url: "/moden-shop/manager/product/modify/session/check",
+					type: "post",
+					data: formData,
+					enctype: "multipart/form-data",
+					processData: false,
+					contentType: false,
+					success: function(response){
+						if(response.success){
+							settingAndShowAlarmModal("알람", "상품이 수정 되었습니다", null, null);
+							resetImgUploadModal();
+							globalSummerNoteHtml = null;
+							$("#content").html(createProductManagementContent());
+							productManagementEvent(productId);
+						}else{
+							settingAndShowAlarmModal("알람", "상품 수정에 문제가 발생하였습니다...", null, null);
+						}
+					},
+					error: function(xhr){
+						console.log("상품 수정 ajax 에러 : " + xhr.status);
+						switch(xhr.status){
+							case 401:
+								settingAndShowAlarmModal("알람", "세션이 만료되었습니다. 다시 한번 로그인 부탁드립니다", null, null);
+								$("#startContent").remove();
+								$("#modalBox").after(createManagerPageLoginContent());
+								loginEvent();
+							break;
+						}
+					}
+				});
+			});
+		}
+		
+		function modifyProductInfoEvent(
+				html, 
+				productId){
+			$("#addProductInfoContentBackBtn").off("click").on("click", function(){
+				$("#content").html(createProductManagementContent());
+				productManagementEvent(productId);
+			});
+			
+			let productMainImgFile = null;
+			// 상품정보 추가 이벤트가 시작 될때마다 이미지 모달에 선택된 이미지를 가져옴
+			imgUploadModalEvenet(function(selectedImgFile){
+				productMainImgFile = selectedImgFile;
+			});
+			
+			$("#productMainImgUploadBtn").off("click").on("click", function(){
+				settingImgUploadModalTitle("상품 썸네일 업로드");
+				$("#imgUploadModal").modal("show");
+				imgUploadModalEvenet(function(selectedImgFile){
+					if(!(selectedImgFile === undefined)){
+						$("#imgSelectedIcon").removeClass("d-none");
+					}
+					productMainImgFile = selectedImgFile;
+				});
+			});
+			
+			$("#productInfoNextBtn").off("click").on("click", function(){
+				let productNameInput = $("#productNameInput").val();
+				let productCategoryRadio = $('input[name="productCategory"]:checked').val();
+				let productRegularPriceInput = Number($("#productRegularPriceInput").val());
+				let productSalesPriceInput =  Number($("#productSalesPriceInput").val());
+				let productDeliveryCostInput = $("#productDeliveryCostInput").val();
+				let sSizeCountInput = $("#sSizeCountInput").val();
+				let mSizeCountInput = $("#mSizeCountInput").val();
+				let lSizeCountInput = $("#lSizeCountInput").val();
+				let productMainImg = productMainImgFile;
+				let sSizeId = $("#sSizeCountInput").data("product-size-quantity-id");
+				let mSizeId = $("#mSizeCountInput").data("product-size-quantity-id");
+				let lSizeId = $("#lSizeCountInput").data("product-size-quantity-id");
+
+				// 유효성 검사
+				if(productNameInput == ""){
+					settingAndShowAlarmModal("알람", "상품명을 입력해주세요", null, null);
+					return;
+				}
+				if(productCategoryRadio == null){
+					settingAndShowAlarmModal("알람", "상품 카테고리를 체크해주세요", null, null);
+					return;
+				}
+				if(productRegularPriceInput == ""){
+					settingAndShowAlarmModal("알람", "정가을 입력해주세요", null, null);
+					return;
+				}
+				if(productSalesPriceInput == ""){
+					settingAndShowAlarmModal("알람", "판매가를 입력해주세요", null, null);
+					return;
+				}
+				if(productRegularPriceInput <= productSalesPriceInput){
+					settingAndShowAlarmModal("알람", "정가가 판매가보다 적습니다..", null, null);
+					return;
+				}
+				if(productDeliveryCostInput == ""){
+					settingAndShowAlarmModal("알람", "배달비를 입력해주세요", null, null);
+					return;
+				}
+				if(sSizeCountInput == ""){
+					settingAndShowAlarmModal("알람", "사이즈S수량을 입력해주세요", null, null);
+					return;
+				}
+				if(mSizeCountInput == ""){
+					settingAndShowAlarmModal("알람", "사이즈M수량을 입력해주세요", null, null);
+					return;
+				}
+				if(lSizeCountInput == ""){
+					settingAndShowAlarmModal("알람", "사이즈L수량을 입력해주세요", null, null);
+					return;
+				}
+				
+				
+				$("#content").html(createModifyProductExplanationContent());
+				if(globalSummerNoteHtml != null){
+					summerNote("#summernote", globalSummerNoteHtml);
+				}else{
+					summerNote("#summernote", html);		// 썸머노트 함수
+				}
+				
+				modifyProductExplanationHtml(
+						productNameInput,
+						productCategoryRadio,
+						productRegularPriceInput,
+						productSalesPriceInput,
+						productDeliveryCostInput,
+						sSizeCountInput,
+						mSizeCountInput,
+						lSizeCountInput,
+						productMainImg,
+						sSizeId,
+						mSizeId,
+						lSizeId,
+						productId,
+						html);
+				
+			});
+		}
+		
+		
+		function productReviewContentEvent(productId) {
+				
+			 // 뒤로가기 버튼
+			 $("#productReviewContentBackBtn").off("click").on("click", function () {
+				   $("#content").html(createProductManagementContent());
+				   productManagementEvent(productId);
+			 });
+			// 리뷰 삭제 버튼
+			$(document).off("click", ".review-delete-btn").on("click", ".review-delete-btn", function(){
+				alert("aa");
+				let reviewId = $(this).data("review-id");
+				 $.ajax({
+				      url: "/moden-shop/manager/review/delete/session/check",
+				      type: "get",
+				      data: {"reviewId": reviewId},
+				      success: function (response) {
+			      		if(response.success){
+			      			$(`#reviewCard${reviewId}`).remove();
+			      		}
+				      },
+				      error: function(xhr){
+				    	  	console.log("상품 수정 ajax 에러 : " + xhr.status);
+						switch(xhr.status){
+							case 401:
+								settingAndShowAlarmModal("알람", "세션이 만료되었습니다. 다시 한번 로그인 부탁드립니다", null, null);
+								$("#startContent").remove();
+								$("#modalBox").after(createManagerPageLoginContent());
+								loginEvent();
+							break;
+						}
+				      }
+			 	});
+			});
+			
+			  let pageCount = 1;
+			  let size = 10;
+			  let isLastPage = false;
+			  
+				// 최초 로딩
+			  $.ajax({
+			      url: "/moden-shop/review/list",
+			      type: "get",
+			      data: {"productId": productId, "page": pageCount, "size": size},
+			      success: function (response) {
+				    	if(response.length == 0 && page == 1){
+				    		$("#reviewBox").html(createHasNotReviewCard());
+				    	}else{
+			    		 	let list = response;
+					        for (let i = 0; i < list.length; i++) {
+					          let item = list[i];
+					          $("#reviewBox").append(createReviewCard(item));
+					        }
+					        if(list.length == size){
+						        	$("#scrollTriggerBox").append(`<div id="scrollTrigger"></div>`);
+						        	let observer = new IntersectionObserver(function (entries, obs) {
+									    for (let i = 0; i < entries.length; i++) {
+									      let entry = entries[i];
+									      if (entry.isIntersecting && !isLastPage) {
+									        pageCount += 1;
+									        $.ajax({
+												 url: "/moden-shop/review/list",
+												 type: "get",
+											     data: {"productId": productId, "page": pageCount, "size": size},
+											     success: function (response) {
+											    	 	if(response < size){
+											    	 		isLastPage = true;
+											    	 	}
+												    	 for(let reviewCardDto of response){
+												    		 $("#reviewBox").append(createReviewCard(reviewCardDto));
+												    	 }
+											     },error: function (xhr) {
+											        console.log("reviewList 받아오기 ajax 에러 : " + xhr.status);
+											      }
+											  });
+									      }
+									    }
+									  }, {
+									    root: null,
+									    rootMargin: "0px",
+									    threshold: 0.0
+									  });
+									  observer.observe($("#scrollTrigger")[0]); // 관찰 시작
+					        		}
+			    			}	
+				      },error: function (xhr) {
+				        console.log("reviewList 받아오기 ajax 에러 : " + xhr.status);
+				      }
+			    });
+			
+			}
+		
+		
+		
+		
+		function imgUploadModalEvenet(callback){
+			$("#imgUploadModalFileInput").off("change").on("change", function(event) {
+				let file = event.target.files[0]; // 선택한 파일
+				if (file) {
+					// 가능한 확장자
+					let allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
+					// 파일이름 가져오기(확장자 포함)
+					let fileName = file.name;
+					// .을 기준으로 문자열을 잘라 배열에 담고 pop()메소드로 마지막 인덱스 문자열을 가져옴 그다음 toLowerCase()로 소문자로 변경
+					let fileExtension = fileName.split('.').pop().toLowerCase();
+	
+					// 가져온 파일의 확장자가 가능한 확장자 배열에 포함되어 있지 않으면
+					if (!allowedExtensions.includes(fileExtension)) {
+						settingAndShowAlarmModal("알람", "이미지 파일만 업로드 가능합니다 (jpg, jpeg, png, gif)", null, null);
+						// 선택된 파일 초기화
+						$(this).val("");
+						$("#imgUploadModalImgPreview").addClass("d-none");
+						$("#imgUploadModalPreviewText").removeClass("d-none");
+						return;
+					}
+					// 미리보기 처리
+					let reader = new FileReader();
+					reader.onload = function(e) {
+						$("#imgUploadModalImgPreview").attr("src", e.target.result);
+						$("#imgUploadModalImgPreview").removeClass("d-none");
+						$("#imgUploadModalPreviewText").addClass("d-none");
+					};
+					reader.readAsDataURL(file);
+				}
+			});
+			$("#imgUploadModalCommitBtn").off("click").on("click", function(){
+				let imgFile = $("#imgUploadModalFileInput")[0].files[0];
+				callback(imgFile);
+			});
+			let imgUploadModalFileInput = $("#imgUploadModalFileInput")[0].files[0];
+			// 이미지업로드 모달이벤트가 실행됬을떄 선택된 파일이있으면 콜백함수의 인자로 전달
+			if(!(imgUploadModalFileInput === undefined)){
+				let imgFile = $("#imgUploadModalFileInput")[0].files[0];
+				callback(imgFile);
+			}
+		}	
+		
+		
+		
+		
+
+		function accountInfoChangeEvent(){
+			let emailAuthCodeSendCheck = false;
+			$("#newEmailAuthCodeSendBtn").off("click").on("click", function(){
+				let newEmailInput = $("#newEmailInput").val();
+				if(newEmailInput == ""){
+					settingAndShowAlarmModal("알람", "새로운 이메일을 입력해주세요", null, null);
+					return;
+				}
+				let emailPattern = /^[0-9a-zA-Z]([-_.]?[0-9a-zA-Z])*@[0-9a-zA-Z]([-_.]?[0-9a-zA-Z])*\.[a-zA-Z]{2,3}$/i;
+				if(!emailPattern.test(newEmailInput)){
+					settingAndShowAlarmModal("알람", "올바른 이메일 형식으로 입력해 주세요", null, null);
+					return;
+				}
+				$.ajax({
+					url: "/moden-shop/email/auth-code/send",
+					type: "post",
+					data: {"email": newEmailInput},
+					success: function(response){
+						if(response.success){
+							emailAuthCodeSendCheck = true;
+							settingAndShowAlarmModal("알람", "이메일 인증번호를 발송했습니다", null, null);
+						}else{
+							settingAndShowAlarmModal("알람", "이메일 인증번호 발송에 실패했습니다", null, null);
+						}
+					},
+					error: function(xhr){
+						console.log("이메일 인증번호 보내기 ajax 에러 : " + xhr.status);
+					}
+				});
+			});
+			
+			$("#emailChangeBtn").off("click").on("click", function(){
+				if(emailAuthCodeSendCheck){
+					let emailAuthCodeInput = $("#emailAuthCodeInput").val();
+					if(emailAuthCodeInput == ""){
+						settingAndShowAlarmModal("알람", "인증번호를 입력해주세요", null, null);
+						return;
+					}
+					$.ajax({
+						url: "/moden-shop/email/auth-code/check",
+						type: "post",
+						data: {"authCode": emailAuthCodeInput},
+						success: function(response){
+							if(response.same){
+								//이메일 변경 ajax
+								let newEmailInput = $("#newEmailInput").val();
+								$.ajax({
+									url: "/moden-shop/manager/member/email/change/session/check",
+									type: "post",
+									contentType: "application/json",
+									data: JSON.stringify({"email": newEmailInput}),
+									success: function(response){
+										if(response.success){
+											$("#newEmailInput").val("");
+											$("#emailAuthCodeInput").val("");
+											settingAndShowAlarmModal("알람", "이메일이 변경되었습니다", null, null);
+										}else{
+											switch(response.changeFailCause){
+												case "EMAIL_CHANGE_ERROR":
+													settingAndShowAlarmModal("알람", "이메일 변경을 실패했습니다", null, null);
+													break;
+											}
+										}
+									},
+									error: function(xhr){
+										console.log("메니저 이메일변경 ajax 에러 : " + xhr.status);
+										switch(xhr.status){
+											case 401:
+												settingAndShowAlarmModal("알람", "세션이 만료되었습니다. 다시 한번 로그인 부탁드립니다", null, null);
+												$("#startContent").remove();
+												$("#modalBox").after(createManagerPageLoginContent());
+												loginEvent();
+											break;
+										}
+									}
+								});
+							}else{
+								settingAndShowAlarmModal("알람", "인증번호가 일치하지 않습니다", null, null);
+							}
+						},
+						error: function(xhr){
+							console.log("인증번호 체크 ajax 에러 : " + xhr.status);
+						}
+					});
+				}else{
+					settingAndShowAlarmModal("알람", "이메일 인증번호 발송 먼저 부탁드립니다", null, null);
+				}
+			});
+			
+			
+			//
+			$("#passwordChangeBtn").off("click").on("click", function(){
+				let nowPasswordInput = $("#nowPasswordInput").val();
+				let newPasswordInput = $("#newPasswordInput").val();
+				let passwordCheckInput = $("#passwordCheckInput").val();
+				if(nowPasswordInput == ""){
+					settingAndShowAlarmModal("알람", "현재 비밀번호를 입력해주세요", null, null);
+					return;
+				}
+				if(newPasswordInput == ""){
+					settingAndShowAlarmModal("알람", "새로운 비밀번호를 입력해주세요", null, null);
+					return;
+				}
+				if(passwordCheckInput == ""){
+					settingAndShowAlarmModal("알람", "비밀번호 확인을 입력해주세요", null, null);
+					return;
+				}
+				if(newPasswordInput != passwordCheckInput){
+					settingAndShowAlarmModal("알람", "새로운 비밀번호와 비밀번호 체크가 일치하지 않습니다", null, null);
+					return;
+				}
+				
+				$.ajax({
+					url: "/moden-shop/manager/member/password/change/session/check",
+					type: "post",
+					contentType: "application/json",
+					data: JSON.stringify({"nowPassword": nowPasswordInput, "newPassword": newPasswordInput}),
+					success: function(response){
+						if(response.success){
+							$("#nowPasswordInput").val("");
+							$("#newPasswordInput").val("");
+							$("#passwordCheckInput").val("");
+							settingAndShowAlarmModal("알람", "비밀번호가 변경 되었습니다", null, null);
+						}else{
+							switch(response.changeCode){
+								case "PASSWORD_CHANGE_ERROR":
+									settingAndShowAlarmModal("알람", "비밀번호가 변경을 실패했습니다", null, null);
+									break;
+								case "NOW_PASSWORD_MISMATCH":
+									settingAndShowAlarmModal("알람", "현재 비밀번호가 일치하지 않습니다", null, null);
+									$("#nowPasswordInput").val("");
+									break;
+							}
+						}
+					},
+					error: function(xhr){
+						console.log("메니저 비밀번호 변경 ajax 에러 : " + xhr.status);
+						switch(xhr.status){
+						case 401:
+								settingAndShowAlarmModal("알람", "세션이 만료되었습니다. 다시 한번 로그인 부탁드립니다", null, null);
+								$("#startContent").remove();
+								$("#modalBox").after(createManagerPageLoginContent());
+								loginEvent();
+							break;
+						}
+					}
+				});
+			});
+			
+			$(".info-change-back-btn").off("click").on("click", function(){
+				$("#content").html(createManagerInfoChangeContent());
+				managerInfoChangeEvent();
+			});
+		}
+		
+		
+		
+		
+		function customerCenterInfoChangeEvent(){
+			// 주소변경버튼
+			$("#customerCenterAddressChangeBtn").off("click").on("click", function(){
+				let postCode = $("#postCode").val();
+				let address = $("#address").val();
+				let detailAddress = $("#detailAddress").val();	// 필수 입력
+				let extraAddress = $("#extraAddress").val();		// null가능
+				
+				if(postCode == ""){
+					settingAndShowAlarmModal("알람", "우편번호를 입력해주세요", null, null);
+					return;
+				}
+				if(address == ""){
+					settingAndShowAlarmModal("알람", "주소를 입력해주세요", null, null);
+					return;
+				}
+				if(detailAddress == ""){
+					settingAndShowAlarmModal("알람", "상세주소를 입력해주세요", null, null);
+					return
+				}
+				if(extraAddress == ""){
+					extraAddress = null;
+				}
+				$.ajax({
+					url: "/moden-shop/manager/customer/center/address/change/session/check",
+					type: "post",
+					contentType: "application/json",
+					data: JSON.stringify({
+						"postCode": postCode,
+						 "address": address,
+						 "detailAddress": detailAddress,
+						 "extraAddress": extraAddress}),
+					success: function(response){
+						if(response.success){
+							$("input").val("");
+							settingAndShowAlarmModal("알람", "고객센터 주소가 변경되었습니다", null, null);
+						}else{
+							$("input").val("");
+							settingAndShowAlarmModal("알람", "고객센터 주소 변경을 실패하였습니다", null, null);
+						}
+					},
+					error: function(xhr){
+						console.log("고객센터 주소 변경 ajax 에러 : " + xhr.status);
+						switch(xhr.status){
+							case 401:
+								settingAndShowAlarmModal("알람", "세션이 만료되었습니다. 다시 한번 로그인 부탁드립니다", null, null);
+								$("#startContent").remove();
+								$("#modalBox").after(createManagerPageLoginContent());
+								loginEvent();
+							break;
+						}
+					}
+				});
+			});
+			// 주소찾기 버튼
+			$("#daumFindAddressBtn").off("click").on("click", function() {
+				daumAddressService();
+			});
+			// 전화번호 변경 버튼
+			$("#customerCenterPhoneNumberChangeBtn").off("click").on("click", function(){
+				let newCustomerCenterPhoneNumberInput = $("#newCustomerCenterPhoneNumberInput").val();
+				if(newCustomerCenterPhoneNumberInput == ""){
+					settingAndShowAlarmModal("알람", "변경할 전화번호를 입력해주세요", null, null);
+					return;
+				}
+				let phonePattern = /^(01[0-9]|02|0[3-6][0-9])[-]?\d{3,4}[-]?\d{4}$/;
+				if(!(phonePattern.test(newCustomerCenterPhoneNumberInput))){
+					$("#newCustomerCenterPhoneNumberInput").val("");
+					settingAndShowAlarmModal("알람", "올바른 전화번호 형식이 아닙니다 다시입력 해주세요", null, null);
+					return;
+				}
+				newCustomerCenterPhoneNumberInput = formatPhoneNumber(newCustomerCenterPhoneNumberInput);
+				$.ajax({
+					url: "/moden-shop/manager/customer/center/Phone/number/change/session/check",
+					type: "post",
+					contentType: "application/json",
+					data: JSON.stringify({"phoneNumber": newCustomerCenterPhoneNumberInput}),
+					success: function(response){
+						if(response.success){
+							$("#newCustomerCenterPhoneNumberInput").val("");
+							settingAndShowAlarmModal("알람", "고객센터 전화번호 변경에 성공하였습니다", null, null);
+						}else{
+							switch(response.changeCode){
+								case "PHONE_NUMBER_CHANGE_ERROR":
+									$("#newCustomerCenterPhoneNumberInput").val("");
+									settingAndShowAlarmModal("알람", "고객센터 전화번호 변경에 실패하였습니다..", null, null);
+									break;
+							}
+						}
+					},
+					error: function(xhr){
+						console.log("고객센터 전화번호 변경 ajax 에러 : " + xhr.status);
+						switch(xhr.status){
+							case 401:
+								settingAndShowAlarmModal("알람", "세션이 만료되었습니다. 다시 한번 로그인 부탁드립니다", null, null);
+								$("#startContent").remove();
+								$("#modalBox").after(createManagerPageLoginContent());
+								loginEvent();
+							break;
+						}
+					}
+				});	
+			});
+			// 뒤로가기 버튼
+			$(".info-change-back-btn").off("click").on("click", function(){
+				$("#content").html(createManagerInfoChangeContent());
+				managerInfoChangeEvent();
+			});
+			
+		}
+		
+		
+		
+		
+		function managerInfoChangeEvent(){
+			$("#customerCenterInfoChangeBtn").off("click").on("click", function(){
+				$("#content").html(createCustomerCenterInfoChangeContent());
+				customerCenterInfoChangeEvent();
+			});
+			$("#accountInfoChangeContentBtn").off("click").on("click", function(){
+				$("#content").html(createAccountInfoChangeContent());
+				accountInfoChangeEvent();
+			});
+		}
+		
+		function IdentityVerificationEvnet(){
+			$("#identityVerificationPasswordInput").off("keypress").on("keypress", function(){
+				$("#identityVerificationPasswordAlarmText").addClass("d-none");
+			});
+
+			$(document).off("click", "#identityVerificationBtn").on("click", "#identityVerificationBtn", function(){
+				let identityVerificationPasswordInput = $("#identityVerificationPasswordInput").val();
+				if(identityVerificationPasswordInput == ""){
+					settingAndShowAlarmModal("알람", "비밀번호를 입력해주세요", null, null);
+					return;
+				}
+				$.ajax({
+					url: "/moden-shop/manager/identity/verification/session/check",
+					type: "post",
+					contentType: "application/json",
+					data: JSON.stringify({"password": identityVerificationPasswordInput}),
+					success: function(response){
+						if(response.success){
+							$("#content").html(createManagerInfoChangeContent());
+							managerInfoChangeEvent();
+						}else{
+							$("#identityVerificationPasswordAlarmText").removeClass("d-none");
+						}
+					},
+					error:function(xhr){
+						console.log("관리자 회원 본인인증 ajax 에러 : " + xhr.status);
+						switch(xhr.status){
+							case 401:
+								settingAndShowAlarmModal("알람", "세션이 만료되었습니다. 다시 한번 로그인 부탁드립니다", null, null);
+								$("#startContent").remove();
+								$("#modalBox").after(createManagerPageLoginContent());
+								loginEvent();
+							break;
+						}
+					}
+				});
+			});	
+		}
+
+		
+		
+		function menuEvent(){
+				$(document).off("click", ".menu-btn").on("click", ".menu-btn", function(){
+					let menuType = $(this).attr("data-menu-type");
+					switch(menuType){
+						case "managerInfoChangerMenu":
+							globalSummerNoteHtml = null;
+							resetImgUploadModal();
+							$("#content").html(createIdentityVerificationContent());
+							IdentityVerificationEvnet();
+							break;
+						case "productManagementMenu":
+							globalSummerNoteHtml = null;
+							resetImgUploadModal();
+							$("#content").html(createProductManagementContent());
+							productManagementEvent(null);
+							break;
+						case "userManagementMenu":
+							globalSummerNoteHtml = null;
+							resetImgUploadModal();
+							break;
+						case "paymentManagementMenu":
+							globalSummerNoteHtml = null;
+							resetImgUploadModal();
+							break;
+						case "inquiryMenu":
+							globalSummerNoteHtml = null;
+							resetImgUploadModal();
+							break;
+					}
+				});
+				
+			}
+		function loginEvent(){
+			// input 입력시 alarmText 초기화
+			$("#loginEmailInput").off("keypress").on("keypress", function(){
+				$("#emailAlarmText").addClass("d-none");
+			});
+			$("#loginPasswordInput").off("keypress").on("keypress", function(){
+				$("#passwordAlarmText").addClass("d-none");
+			});
+			// 로그인 버튼
+			$("#loginBtn").off("click").on("click", function(){
+				let loginEmailInput = $("#loginEmailInput").val();
+				let loginPasswordInput = $("#loginPasswordInput").val();
+				if(loginEmailInput == ""){
+					settingAndShowAlarmModal("알람", "이메일을 입력해주세요", null, null);
+					return;
+				}
+				// 이메일 형식 정규식
+				let emailPattern = /^[0-9a-zA-Z]([-_.]?[0-9a-zA-Z])*@[0-9a-zA-Z]([-_.]?[0-9a-zA-Z])*\.[a-zA-Z]{2,3}$/i;
+				if(!emailPattern.test(loginEmailInput)){
+					settingAndShowAlarmModal("알람", "올바른 이메일 형식으로 입력해 주세요", null, null);
+					return;
+				}
+				if(loginPasswordInput == ""){
+					settingAndShowAlarmModal("알람", "비밀번호를 입력해주세요", null, null);
+					return;
+				}
+				$.ajax({
+					url: "/moden-shop/manager/member/login",
+					type: "post",
+					contentType: "application/json",
+					data: JSON.stringify({"email": loginEmailInput, "password": loginPasswordInput}),
+					success: function(response){
+						switch(response.loginCheckState){
+							case "EMAIL_NOT_FOUND":
+								$("#emailAlarmText").removeClass("d-none");
+								break;
+							case "INVALID_PASSWORD":
+								$("#passwordAlarmText").removeClass("d-none");
+								break;
+							case "SUCCESS":
+								$("#loginContent").remove();
+								$("#modalBox").after(createStartContent());
+								$.ajax({
+									url: "/moden-shop/manager/profile/session/check",
+									type: "get",
+									success: function(response){
+										$("#managerName").text(response.name);
+									},
+									error:function(xhr){
+										console.log("관리자 회원 프로필 정보 가져오기ajax 에러 : " + xhr.status);
+										switch(xhr.status){
+											case 401:
+												settingAndShowAlarmModal("알람", "세션이 만료되었습니다. 다시 한번 로그인 부탁드립니다", null, null);
+												$("#startContent").remove();
+												$("#modalBox").after(createManagerPageLoginContent());
+												loginEvent();
+											break;
+										}
+									}
+								});	
+								menuEvent();
+								break;
+							}
+						},
+						error:function(xhr){
+							console.log("관리자 회원 로그인ajax 에러 : " + xhr.status);
+						}
+					});
+				});
+			}
+
+			
+		
+			
+		
+			// -------------------------------------메뉴 클릭시 컨텐츠 html 함수 ---------------------
+			function settingProductInfoCard(
+				productId,
+				productName,
+				productCategory,
+				regularPrice,
+				discountRate,
+				salesPrice,
+				deliveryCost,
+				productMainImg,
+				sSizeCount,
+				mSizeCount,
+				lSizeCount){
+			$("#productTitle").text(productName);
+			$("#productCategory").text(productCategory);
+			$("#regularPrice").text(regularPrice);
+			$("#discountRate").text(discountRate);
+			$("#salesPrice").text(salesPrice);
+			$("#deliveryCost").text(deliveryCost);
+			$("#productMainImage").attr("src", productMainImg);
+			$("#sSizeCount").text(sSizeCount);
+			$("#mSizeCount").text(mSizeCount);
+			$("#lSizeCount").text(lSizeCount);
+			$("#productInfoCard").removeClass("d-none");
+			$("#notProductSelected").addClass("d-none");
+			$("#reviewBtn").attr("data-product-id", productId);
+			$("#modifyBtn").attr("data-product-id", productId);
+			$("#productDelete").attr("data-product-id", productId);
+		}	
+			
+			
+			
+			function createProductExplanationWriterContent(){
+				return `
+					<div id="summernoteBoxBackBtn" class="back-icon-position rounded-circle hover">
+						<img alt="뒤로가기 아이콘" src="/icon/backIcon.png" class="w-100 h-100">
+					</div>
+					<div class="post-form h-100">
+						<div class="h4 m-0 py-3 text-center border-bottom">상품 추가 > 상품 정보 입력 > 상세 설명 작성</div>
+						<div class="mb-3"></div>
+						<div id="summernote"></div>
+						<div class="d-flex justify-content-end">
+							<button id="productUploda" type="button" class="btn btn-success mt-3">상품 업로드</button>
+						</div>
+					</div> 
+				`;
+			}
+			
+			function createModifyProductExplanationContent(){
+				return `
+					<div id="summernoteBoxBackBtn" class="back-icon-position rounded-circle hover">
+						<img alt="뒤로가기 아이콘" src="/icon/backIcon.png" class="w-100 h-100">
+					</div>
+					<div class="post-form h-100">
+						<div class="h4 m-0 py-3 text-center border-bottom">상품 수정 > 상품 정보 수정 > 상세 설명 수정</div>
+						<div class="mb-3"></div>
+						<div id="summernote"></div>
+						<div class="d-flex justify-content-end">
+							<button id="productUploda" type="button" class="btn btn-success mt-3">상품 업로드</button>
+						</div>
+					</div> 
+				`;
+			}
+			
+			function createModifyProductInfoContent(){
+				return `
+					<div id="addProductInfoContentBackBtn" class="back-icon-position rounded-circle hover">
+						<img alt="뒤로가기 아이콘" src="/icon/backIcon.png" class="w-100 h-100">
+					</div>
+		            <div class="h-100 px-4">
+		                <h4 class="text-center m-0 py-3 border-bottom">상품 수정 > 상품 정보 수정</h4>
+		                <div class="bg-white shadow rounded  d-flex flex-column mt-3 pb-4">
+		                    <div class="bg-primary text-white text-center py-2 rounded mb-4">
+		                        <h4 class="mb-0">상품 정보 수정</h4>
+		                    </div>
+		                    <div class="flex-grow-1 px-4">
+		                        <div class="form-row mb-3">
+		                            <div class="form-group col-md-4">
+		                                <label>상품명</label>
+		                                <input id="productNameInput" type="text" class="form-control" placeholder="상품명을 입력하세요">
+		                            </div>
+		                            <div class="form-group col-md-8">
+			                            <label class="d-block mb-2">상품 카테고리</label>
+			                            <div class="custom-control custom-radio custom-control-inline">
+			                              <input type="radio" id="categoryOuter" name="productCategory" class="custom-control-input" value="OUTER">
+			                              <label class="custom-control-label" for="categoryOuter">Outer</label>
+			                            </div>
+			                            <div class="custom-control custom-radio custom-control-inline">
+			                              <input type="radio" id="categoryTop" name="productCategory" class="custom-control-input" value="TOP">
+			                              <label class="custom-control-label" for="categoryTop">Top</label>
+			                            </div>
+			                            <div class="custom-control custom-radio custom-control-inline">
+			                              <input type="radio" id="categoryShirt" name="productCategory" class="custom-control-input" value="SHIRT">
+			                              <label class="custom-control-label" for="categoryShirt">Shirt</label>
+			                            </div>
+			                            <div class="custom-control custom-radio custom-control-inline">
+			                              <input type="radio" id="categoryPants" name="productCategory" class="custom-control-input" value="PANTS">
+			                              <label class="custom-control-label" for="categoryPants">Pants</label>
+			                            </div>
+			                            <div class="custom-control custom-radio custom-control-inline">
+			                              <input type="radio" id="categoryAccessory" name="productCategory" class="custom-control-input" value="ACCESSORY">
+			                              <label class="custom-control-label" for="categoryAccessory">Accessory</label>
+			                            </div>
+		                            </div>
+		                        </div>
+		                        <hr>
+		                        <div class="form-row mb-3">
+		                            <div class="form-group col-md-4">
+		                                <label>정가</label>
+		                                <input id="productRegularPriceInput" type="number" class="form-control" placeholder="정가를 입력하세요">
+		                            </div>
+		                            <div class="form-group col-md-4">
+		                                <label>판매가</label>
+		                                <input id="productSalesPriceInput" type="number" class="form-control" placeholder="판매가를 입력하세요">
+		                            </div>
+		                            <div class="form-group col-md-4">
+		                                <label>배달비</label>
+		                                <input id="productDeliveryCostInput" type="number" class="form-control" placeholder="배달비를 입력하세요">
+		                            </div>
+		                        </div>
+		                        <hr>
+		                        <div class="form-row">
+		                            <div class="form-group col-md-4">
+		                                <label>사이즈S</label>
+		                                <input id="sSizeCountInput" type="number" class="form-control" placeholder="수량">
+		                            </div>
+		                            <div class="form-group col-md-4">
+		                                <label>사이즈M</label>
+		                                <input id="mSizeCountInput" type="number" class="form-control" placeholder="수량">
+		                            </div>
+		                            <div class="form-group col-md-4">
+		                                <label>사이즈L</label>
+		                                <input id="lSizeCountInput" type="number" class="form-control" placeholder="수량">
+		                            </div>
+		                        </div>
+		                        <hr>
+		                        <div class="d-flex justify-content-between w-100">
+		                            <div class="col-md-6 p-0">
+		                                <label>제품 썸네일</label>
+		                                <div class="input-group d-flex">
+	                                        <button id="productMainImgUploadBtn" type="button" class="btn btn-secondary">메인 이미지 업로드</button>
+		                                		<div id="imgSelectedIcon">
+		                                			<img class="h-100 ml-2" alt="이미지 선택 완료 아이콘" src="/icon/commitIcon.png" width="35px">
+		                                		</div>
+                                    		</div>
+		                            </div>
+		                            <div class="col-md-6 d-flex justify-content-end align-items-end p-0">
+		                                <button id="productInfoNextBtn" type="button" class="btn btn-success px-5">다음</button>
+		                            </div>
+		                        </div>
+		                    </div>
+		                </div>
+		            </div>
+				`;
+			}
+			function createAddProductInfoContent(){
+				return `
+					<div id="addProductInfoContentBackBtn" class="back-icon-position rounded-circle hover">
+						<img alt="뒤로가기 아이콘" src="/icon/backIcon.png" class="w-100 h-100">
+					</div>
+		            <div class="h-100 px-4">
+		                <h4 class="text-center m-0 py-3 border-bottom">상품 추가 > 상품 정보 입력</h4>
+		                <div class="bg-white shadow rounded  d-flex flex-column mt-3 pb-4">
+		                    <div class="bg-primary text-white text-center py-2 rounded mb-4">
+		                        <h4 class="mb-0">상품 정보 입력</h4>
+		                    </div>
+		                    <div class="flex-grow-1 px-4">
+		                        <div class="form-row mb-3">
+		                            <div class="form-group col-md-4">
+		                                <label>상품명</label>
+		                                <input id="productNameInput" type="text" class="form-control" placeholder="상품명을 입력하세요">
+		                            </div>
+		                            <div class="form-group col-md-8">
+			                            <label class="d-block mb-2">상품 카테고리</label>
+			                            <div class="custom-control custom-radio custom-control-inline">
+			                              <input type="radio" id="categoryOuter" name="productCategory" class="custom-control-input" value="OUTER">
+			                              <label class="custom-control-label" for="categoryOuter">Outer</label>
+			                            </div>
+			                            <div class="custom-control custom-radio custom-control-inline">
+			                              <input type="radio" id="categoryTop" name="productCategory" class="custom-control-input" value="TOP">
+			                              <label class="custom-control-label" for="categoryTop">Top</label>
+			                            </div>
+			                            <div class="custom-control custom-radio custom-control-inline">
+			                              <input type="radio" id="categoryShirt" name="productCategory" class="custom-control-input" value="SHIRT">
+			                              <label class="custom-control-label" for="categoryShirt">Shirt</label>
+			                            </div>
+			                            <div class="custom-control custom-radio custom-control-inline">
+			                              <input type="radio" id="categoryPants" name="productCategory" class="custom-control-input" value="PANTS">
+			                              <label class="custom-control-label" for="categoryPants">Pants</label>
+			                            </div>
+			                            <div class="custom-control custom-radio custom-control-inline">
+			                              <input type="radio" id="categoryAccessory" name="productCategory" class="custom-control-input" value="ACCESSORY">
+			                              <label class="custom-control-label" for="categoryAccessory">Accessory</label>
+			                            </div>
+		                            </div>
+		                        </div>
+		                        <hr>
+		                        <div class="form-row mb-3">
+		                            <div class="form-group col-md-4">
+		                                <label>정가</label>
+		                                <input id="productRegularPriceInput" type="number" class="form-control" placeholder="정가를 입력하세요">
+		                            </div>
+		                            <div class="form-group col-md-4">
+		                                <label>판매가</label>
+		                                <input id="productSalesPriceInput" type="number" class="form-control" placeholder="판매가를 입력하세요">
+		                            </div>
+		                            <div class="form-group col-md-4">
+		                                <label>배달비</label>
+		                                <input id="productDeliveryCostInput" type="number" class="form-control" placeholder="배달비를 입력하세요">
+		                            </div>
+		                        </div>
+		                        <hr>
+		                        <div class="form-row">
+		                            <div class="form-group col-md-4">
+		                                <label>사이즈S</label>
+		                                <input id="sSizeCountInput" type="number" class="form-control" placeholder="수량">
+		                            </div>
+		                            <div class="form-group col-md-4">
+		                                <label>사이즈M</label>
+		                                <input id="mSizeCountInput" type="number" class="form-control" placeholder="수량">
+		                            </div>
+		                            <div class="form-group col-md-4">
+		                                <label>사이즈L</label>
+		                                <input id="lSizeCountInput" type="number" class="form-control" placeholder="수량">
+		                            </div>
+		                        </div>
+		                        <hr>
+		                        <div class="d-flex justify-content-between w-100">
+		                            <div class="col-md-6 p-0">
+		                                <label>제품 썸네일</label>
+		                                <div class="input-group d-flex">
+	                                        <button id="productMainImgUploadBtn" type="button" class="btn btn-secondary">메인 이미지 업로드</button>
+		                                		<div id="imgSelectedIcon" class="d-none">
+		                                			<img class="h-100 ml-2" alt="이미지 선택 완료 아이콘" src="/icon/commitIcon.png" width="35px">
+		                                		</div>
+                                    		</div>
+		                            </div>
+		                            <div class="col-md-6 d-flex justify-content-end align-items-end p-0">
+		                                <button id="productInfoNextBtn" type="button" class="btn btn-success px-5">다음</button>
+		                            </div>
+		                        </div>
+		                    </div>
+		                </div>
+		            </div>
+				`;
+			}
+			
+			function createProductManagementTableRow(productManageListItemDto){
+				return `
+					<tr class="selected-product-btn" data-product-id="${productManageListItemDto.id}">
+		                <th>${productManageListItemDto.id}</th>
+		                <td>${productManageListItemDto.productName}</td>
+		            </tr>
+				`;
+			}
+			
+			function createHasNotReviewCard(){
+				return `
+					<div class="h-100 w-100 d-flex justify-content-center align-items-center">
+						<div class="h5">작성된 리뷰가 없습니다</div>
+					</div>
+				`;
+			}
+			
+			function createReviewCard(reviewManageCardItemDto){
+				return `
+					 <!-- 리뷰 하나 -->
+	                <div id="reviewCard${reviewManageCardItemDto.reviewCardItemDto.id}" class="card mb-4 shadow-sm border rounded">
+	                    <!-- 리뷰 작성자 정보 -->
+	                    <div class="card-header bg-light d-flex align-items-center">
+	                    		<div class="review-profile-img-box rounded-circle mr-3">
+	                    			<img src="${reviewManageCardItemDto.generalMemberReviewCardItemDto.profileImg}" class="rounded-circle w-100 h-100" alt="프로필 이미지">
+	                    		</div>
+	                        <div>
+	                            <strong>${reviewManageCardItemDto.generalMemberReviewCardItemDto.nickName}</strong><br>
+	                            <small class="text-muted">${reviewManageCardItemDto.reviewCardItemDto.reviewUpdatedAt}</small>
+	                        </div>
+	                    </div>
+	                    <!-- 리뷰 본문 -->
+	                    <div class="card-body">
+		                    <!-- ⭐ 별점 영역 -->
+		                    <div id="point${reviewManageCardItemDto.reviewCardItemDto.id}" class="text-warning mb-2">
+		                      ${"★".repeat(reviewManageCardItemDto.reviewCardItemDto.point)}${"☆".repeat(5 - reviewManageCardItemDto.reviewCardItemDto.point)}
+		                    </div>
+	                        <h6 class="card-title mb-2 text-dark">${reviewManageCardItemDto.reviewCardItemDto.reviewTitle}</h6>
+	                        <p class="card-text text-secondary">${reviewManageCardItemDto.reviewCardItemDto.reviewText}</p>
+	                    </div>
+	                    <!-- 관리자 기능 버튼 -->
+	                    <div class="card-footer bg-white text-right">
+	                        <button data-review-id="${reviewManageCardItemDto.reviewCardItemDto.id}" type="button" class="review-delete-btn btn btn-sm btn-outline-danger mr-2">
+	                            리뷰 삭제
+	                        </button>
+	                        <button type="button" class="btn btn-sm btn-outline-dark">
+	                            블랙리스트 등록
+	                        </button>
+	                    </div>
+	                </div>
+	                <!-- 리뷰 하나 -->
+				`;
+			}
+			
+			function createProductReviewContent(){
+				return `
+					<div id="productReviewContentBackBtn" class="back-icon-position rounded-circle hover">
+						<img alt="뒤로가기 아이콘" src="/icon/backIcon.png" class="w-100 h-100">
+					</div>
+					<div class="contain">
+	                <h4 class="mb-3 border-bottom text-center py-3">상품 리뷰</h4>
+	                <div id="a" class="review-scroll-box w-100">
+	                    <div id="scrollTriggerBox" class="row w-100">
+	                        <div id="reviewBox" class="review-box mx-auto w-75">
+              
+	                        </div>
+	                    </div>
+	                </div>
+	            </div>
+				`;
+			}
+			
+			function createProductManagementContent(){
+				return `
+					<div class="d-flex flex-column h-100">
+	                		<div class="h4 text-center m-0 py-3">상품관리</div>
+	                		<div class="d-flex flex-grow-1">
+		                    <div class="col-6 h-100 border">
+		                        <div class="d-flex py-2 justify-content-between">
+		                            <div class="input-group col-8 p-0">
+		                                <input id="searchText" type="text" class="form-control" placeholder="상품명">
+		                                <div class="input-group-append">
+		                                    <button id="searchBtn" class="btn btn-secondary" type="button">검색</button>
+		                                </div>
+		                            </div>
+		                            <button id="addProductBtn" type="button" class="btn btn-success col-2 p-0">상품 추가</button>
+		                        </div>
+		                        <div class="product-table-box">
+		                        		<div id="notProductText" class="h-100 w-100">
+			                        		<div class="h-100 w-100 d-flex justify-content-center align-items-center">
+			                                <div class="h4">등록된 상품이 없습니다</div>
+			                            </div>
+		                        		</div>
+		                        		<div id="notSearchText" class="h-100 w-100 d-none">
+			                        		<div class="h-100 w-100 d-flex justify-content-center align-items-center">
+			                                <div class="h4">검색결과가 없습니다</div>
+			                            </div>
+		                        		</div>
+		                            <table id="productListTable" class="d-none table table-hover text-center">
+		                                <thead>
+		                                    <tr>
+		                                        <th scope="col">ID</th>
+		                                        <th scope="col">상품명</th>
+		                                    </tr>
+		                                </thead>
+		                                <tbody id="productManagementTbody">
+		
+		
+		                                </tbody>
+		                            </table>
+		                        </div>
+		                    </div>
+		                    <div class="col-6">
+		                        <div class="card shadow-sm h-100">
+		                            <div class="card-header bg-primary text-white text-center h5">상품 정보</div>
+		                            <div class="card-body">
+		                            		<div id="notProductSelected" class="h-100 w-100">
+			                                <div class="h-100 w-100 d-flex justify-content-center align-items-center">
+			                                    <div class="h4">상품을 선택해주세요</div>
+			                                </div>
+		                                </div>
+		                                <div id="productInfoCard" class="d-none scroll">
+		                                		<div class="text-center mb-3">
+		                                			<img id="productMainImage" src="/img/bannerImg2.jpg" class="img-fluid rounded" style="max-height: 200px;" alt="상품 대표 이미지">
+		                            			</div>
+		                                    <div class="mb-3">
+		                                        <strong>상품명: </strong><span id="productTitle" class="text-dark">아라</span>
+		                                    </div>
+		                                    <ul class="list-group list-group-flush mb-3">
+	                                    		   <li class="list-group-item d-flex justify-content-between align-items-center">
+	                                    		   		<span>카테고리</span>
+				                                    <span id="productCategory" class="badge badge-pill badge-primary">Outer</span>
+			                                    </li>
+		                                        <li class="list-group-item">상품정가 : <span
+		                                                class="float-right text-secondary">₩<span id="regularPrice">100,000</span></span></li>
+		                                        <li class="list-group-item">상품할인률 : <span
+		                                                class="float-right text-danger"><span id="discountRate">3</span>%</span>
+		                                        </li>
+		                                        <li class="list-group-item">상품판매가 : <span
+		                                                class="float-right text-success font-weight-bold">₩<span id="salesPrice">70,000</span></span></li>
+		                                        <li class="list-group-item">상품배달비 : <span
+		                                                class="float-right text-muted">₩<span class="deliveryCost">3,000</span></span></li>
+		                                    </ul>
+		
+		                                    <div class="text-center font-weight-bold mb-2">상품 수량</div>
+		                                    <table class="table table-bordered text-center">
+		                                        <thead class="thead-light">
+		                                            <tr>
+		                                                <th>S</th>
+		                                                <th>M</th>
+		                                                <th>L</th>
+		                                            </tr>
+		                                        </thead>
+		                                        <tbody>
+		                                            <tr>
+		                                                <td id="sSizeCount">1개</td>
+		                                                <td id="mSizeCount">100개</td>
+		                                                <td id="lSizeCount">3개</td>
+		                                            </tr>
+		                                        </tbody>
+		                                    </table>
+		                                    <div class="d-flex justify-content-between mt-3">
+			                                    <button id="reviewBtn" class="btn btn-sm btn-outline-secondary">리뷰보기</button>
+			                                    <div class="d-flex">
+				                                    <button id="modifyBtn" class="btn btn-sm btn-outline-primary">수정</button>
+				                                    <button id="productDelete" class="btn btn-sm btn-outline-danger ml-2">상품 삭제</button>
+			                                    </div>
+		                                  	</div>
+		                                </div>
+		                            </div>
+		                        </div>
+		                    </div>
+		                </div>
+		            </div>
+				`;
+			}
+			
+			
+			function createManagerPageLoginContent(){
+				return `
+					<section id="loginContent" class="vh-100">
+						<article class="w-100 h-100">
+							<div class="col-12 h-100">
+								<div class="d-flex justify-content-center h-100 align-items-center">
+									<div class="col-4">
+										<div class="h4 text-center py-3 m-0">관리자 페이지 로그인</div>
+										<div class="mb-2">
+											<label>이메일</label> 
+											<input id="loginEmailInput" type="text" class="form-control" placeholder="이메일을 입력해주세요..">
+											<div id="emailAlarmText" class="form-text text-danger d-none">
+												<small>가입된 이메일이 없습니다</small>
+											</div>
+										</div>
+										<div class="mb-2">
+											<label>비밀번호</label> 
+											<input id="loginPasswordInput" type="password" class="form-control" placeholder="비밀번호를 입력해주세요..">
+											<div id="passwordAlarmText" class="form-text text-danger d-none">
+												<small>비밀번호가 일치하지 않습니다</small>
+											</div>
+										</div>
+										<button id="loginBtn" type="button" class="btn btn-primary w-100">확인</button>
+									</div>
+								</div>
+							</div>
+						</article>
+					</section>
+				`;
+			}
+			function createManagerInfoChangeContent(){
+				return `
+					<div class="h-100 d-flex justify-content-center align-items-center">
+						<div class="d-flex col-6 justify-content-center">
+							<div class="col-6 rounded-lg d-flex justify-content-center">
+								<div id="customerCenterInfoChangeBtn" class="hover rounded-lg">
+									<div class="rounded-lg d-flex justify-content-center">
+										<img alt="고객센터 정보 변경 아이콘" src="/icon/customerCenterInfoChangeIcon.png" class="w-75 h-75 rounded-lg">
+									</div>
+									<div class="text-center font-weight-bolder font-size-vw">고객센터 정보 변경</div>
+								</div>
+							</div>
+							<div class="col-6 rounded-lg d-flex justify-content-center">
+								<div id="accountInfoChangeContentBtn" class="hover rounded-lg">
+									<div class="rounded-lg d-flex justify-content-center">
+										<img alt="계정정보 변경 아이콘" src="/icon/accountInfoChangeIcon.png" class="w-75 h-75 rounded-lg">
+									</div>
+									<div class="text-center font-weight-bolder font-size-vw">계정 정보 변경</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				`;
+			}
+			
+			function createCustomerCenterInfoChangeContent(){
+				return `
+					<div class="back-icon-position rounded-circle hover info-change-back-btn">
+						<img alt="뒤로가기 아이콘" src="/icon/backIcon.png" class="w-100 h-100">
+					</div>
+					<div class="z-index d-flex h-100 w-100 justify-content-center">
+						<div class="col-6 d-flex h-100 align-items-center">
+							<div class="col-10">
+			                    <div class="h4 py-3 m-0">고객센터 정보 변경</div>
+			                    <label>고객센터 전화번호 변경</label>
+			                    <div class="d-flex mb-2">
+			                        <input id="newCustomerCenterPhoneNumberInput" type="text" class="form-control col-10" placeholder="새로운 전화번호">
+			                        <button id="customerCenterPhoneNumberChangeBtn" type="button" class="btn btn-primary col-2">변경</button>
+			                    </div>
+		              		  	<div class="form-group mt-2">
+									 <label>고객센터 주소 변경</label> 
+									 <input class="form-control" type="text"
+										id="postCode" placeholder="우편번호"> 
+									 <input
+										class="form-control" type="text" id="address" placeholder="주소">
+									 <input class="form-control" type="text" id="detailAddress"
+										placeholder="상세주소"> <input class="form-control"
+										type="text" id="extraAddress" placeholder="참고항목(건물명 등)">
+									 <div class="d-flex justify-content-end">
+										 <button id="daumFindAddressBtn" type="button" class="btn btn-secondary mr-1">우편번호 찾기</button>
+										 <button id="customerCenterAddressChangeBtn" type="button" class="btn btn-primary">변경</button>
+									 </div>
+								</div>
+							</div>
+						</div>
+					</div>
+				`;
+			}
+			
+			function createAccountInfoChangeContent(){
+				return `
+					<div class="back-icon-position rounded-circle hover info-change-back-btn">
+						<img alt="뒤로가기 아이콘" src="/icon/backIcon.png" class="w-100 h-100">
+					</div>
+					<div class="d-flex h-100 justify-content-center">
+						<div class="col-6 d-flex h-100 align-items-center">
+							<div class="col-10">
+								<div class="h4 py-3 m-0">관리자 계정 정보 변경</div>
+				                <label>이메일</label>
+				                <div class="input-group mb-2">
+				                	<input id="newEmailInput" type="text" class="form-control" placeholder="새로운 이메일">
+				                	<div class="input-group-append">
+				                  		<button id="newEmailAuthCodeSendBtn" class="btn btn-secondary" type="button">인증번호 발송</button>
+				                	</div>
+				              	</div>
+				                <input id="emailAuthCodeInput" type="text" class="form-control mb-2" placeholder="인증코드">
+				                <button id="emailChangeBtn" type="button" class="btn btn-primary w-100 mb-4">이메일 변경</button>
+				                
+				                <label>비밀번호</label>
+				                <input id="nowPasswordInput" type="password" class="form-control mb-2" placeholder="현재 비밀번호">
+				                <input id="newPasswordInput" type="password" class="form-control mb-2" placeholder="새로운 비밀번호">
+				                <input id="passwordCheckInput" type="password" class="form-control mb-2" placeholder="비밀번호 확인">
+				                <button id="passwordChangeBtn" type="button" class="btn btn-primary w-100">비밀번호 변경</button>
+				        	</div>
+			            </div>
+					</div>
+				`;
+			}
+
+			function createStartContent(){
+				return `
+					<section id="startContent" class="vh-100 d-flex">
+						<aside class="h-100 col-2 p-0">
+							<div class="border light-gray border-secondary rounded-lg h-100">
+								<div class="d-flex bg-white p-2">
+									<div class="rounded-circle profile-img-box">
+										<img id="managerProfileImg" alt="프로필사진" src="/img/managerProfileImg.png"
+											class="w-100 h-100 rounded-circle">
+									</div>
+									<div class="ml-2">
+										<div class="font-weight-bolder">관리자</div>
+										<div id="managerName" class="small">이름</div>
+									</div>
+								</div>
+								<nav class="light-gray">
+									<ul th:fragment="nav" class="nav d-flex flex-column">
+										<li class="nav-item">
+											<button type="button" data-menu-type="managerInfoChangerMenu" class="menu-btn btn btn-link nav-link text-dark">관리자 정보</button>
+										</li>
+										<li class="nav-item">
+											<button type="button" data-menu-type="productManagementMenu" class="menu-btn btn btn-link nav-link text-dark">상품 관리</button>
+										</li>
+										<li class="nav-item">
+											<button type="button" data-menu-type="userManagementMenu" class="menu-btn btn btn-link nav-link text-dark">회원관리</button>
+										</li>
+										<li class="nav-item">
+											<button type="button" data-menu-type="paymentManagementMenu" class="menu-btn btn btn-link nav-link text-dark">정산/통계</button>
+										</li>
+										<li class="nav-item">
+											<button type="button" data-menu-type="inquiryMenu" class="menu-btn btn btn-link nav-link text-dark">문의</button>
+										</li>
+									</ul>
+								</nav>
+							</div>
+						</aside>
+						<article id="content" class="col-10 h-100">
+							<div class="d-flex justify-content-center h-100 align-items-center">
+								<div class="h1">메뉴를 선택해 주세요</div>
+							</div>
+						</article>
+					</section>
+				`;
+			}
+			
+			function createIdentityVerificationContent(){
+				return `
+					<div class="d-flex justify-content-center h-100 align-items-center">
+			            <div class="col-6">
+			                <div class="h4 text-center py-3 m-0">본인인증</div>
+			                <div class="mb-2">
+			                    <label>비밀번호</label>
+			                    <input id="identityVerificationPasswordInput" type="password" class="form-control" placeholder="비밀번호를 입력해주세요..">
+			                	<div id="identityVerificationPasswordAlarmText" class="form-text text-danger d-none">
+									<small>비밀번호가 일치하지 않습니다</small>
+								</div>
+							</div>
+			                <button id="identityVerificationBtn" type="button" class="btn btn-primary w-100">확인</button>
+			            </div>
+			        </div>
+				`;
+			}
+			
+	</script>
+</body>
+</html>

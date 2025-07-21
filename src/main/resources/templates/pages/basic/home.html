@@ -1,0 +1,99 @@
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	layout:decorate="~{layout/basic}">
+<head>
+<title layout:fragment="title">ModenShop</title>
+<link layout:fragment="pageCss" rel="stylesheet" href="/css/mainStyle.css">
+</head>
+<body>
+	<section layout:fragment="contents">
+		<article>
+			<div class="banner-container col-12 p-0">
+				<div class="slider d-flex h-100" id="slider">
+					<img alt="배너" src="/img/bannerImg1.jpg" class="w-100 h-100 banner-img">
+					<img alt="배너" src="/img/bannerImg2.jpg" class="w-100 h-100 banner-img">
+					<img alt="배너" src="/img/bannerImg3.jpg" class="w-100 h-100 banner-img">
+					<img alt="배너" src="/img/bannerImg4.jpg" class="w-100 h-100 banner-img">
+					<img alt="배너" src="/img/bannerImg1.jpg" class="w-100 h-100 banner-img">
+				</div>
+
+			</div>
+		</article>
+		<article class="py-3">
+			<h2>Best seller</h2>
+			<div class="d-flex justify-content-between mb-1">
+				<div>
+					<img src="/img/Jacket.jpg" width="200px" height="285px">
+					<div>
+						<div class="font-weight-bold">자켓</div>
+						<del class="text-decoration text-secondary">87,000원</del>
+						<div><span class="text-danger font-weight-bold mr-2">%20</span>55,000원</div>
+					</div>
+				</div>
+				<div>
+					<img src="/img/Tshirt.jpg" width="200px" height="285px">
+					<div>
+						<div class="font-weight-bold">기본 반팔티</div>
+						<del class="text-decoration text-secondary">15,000원</del>
+						<div><span class="text-danger font-weight-bold mr-2">%20</span>55,000원</div>
+					</div>
+				</div>
+				<div>
+					<img src="/img/denimJacket.jpg" width="200px" height="285px">
+					<div>
+						<div class="font-weight-bold">흑청 자켓</div>
+						<del class="text-decoration text-secondary">45,000원</del>
+						<div><span class="text-danger font-weight-bold mr-2">%20</span>55,000원</div>
+					</div>
+				</div>
+				<div>
+					<img src="/img/shirt.jpg" width="200px" height="285px">
+					<div>
+						<div class="font-weight-bold">브이넥 셔츠</div>
+						<del class="text-decoration text-secondary">53,000원</del>
+						<div><span class="text-danger font-weight-bold mr-2">%20</span>55,000원</div>
+					</div>
+				</div>
+				<div>
+					<img
+						src="/img/knit.jpg" width="200px" height="285px">
+					<div>
+						<div class="font-weight-bold">프리미엄 니트</div>
+						<del class="text-decoration text-secondary">33,000원</del>
+						<div><span class="text-danger font-weight-bold mr-2">%20</span>55,000원</div>
+					</div>
+				</div>
+			</div>
+		</article>
+	</section>
+
+	<script layout:fragment="script">
+		let index = 0;
+		const slideDuration = 3000; // 애니메이션 시간
+		const delayBetweenSlides = 3000; // 슬라이드 간 대기 시간
+	
+		function slide() {
+		    $(".slider").css("transition", `transform ${slideDuration / 1000}s ease-in-out`);
+		    index++;
+		    
+		    $(".slider").css("transform", `translateX(${-index * 1200}px)`);
+	
+		    if (index == $(".slider img").length - 1) {
+		        setTimeout(() => {
+		            $(".slider").css("transition", "none");
+		            $(".slider").css("transform", "translateX(0px)");
+		            index = 0;
+		        }, slideDuration); // 애니메이션 종료 후 초기화
+		    }
+		    setTimeout(slide, slideDuration + delayBetweenSlides); // 애니메이션 + 대기 시간 후 다음 슬라이드 실행 => 다시 실행
+		}
+	
+		// 첫 슬라이드 시작
+		setTimeout(slide, delayBetweenSlides);  // 한번 실행
+	</script>
+</body>
+</html>
+
+
+
+

@@ -1,0 +1,68 @@
+<!-- 부모 템플릿 -->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<head>
+<meta charset="UTF-8">
+<title layout:fragment="title">기본 레이아웃</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css" integrity="sha384-xOolHFLEh07PJGoPkLv1IbcEPTNtaed2xpHsD9ESMhqIYd0nLMwNLD69Npy4HI+N" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/commonStyle.css">
+<!-- 페이지별 css 동적 추가 -->
+<th:block layout:fragment="pageCss"></th:block>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+</head>
+<body>
+	<div layout:fragment="modalBox">
+		<!-- 모달을 선언한 순서가 마지막일수록 중첩으로 위에 띄울수있음 -->
+		
+	</div>
+	<div class="wrap">
+		<!-- 컨틀로러에서 모델로 알려줌 -->
+		<th:block th:switch="${pageType}">
+			<th:block th:case="'login'">
+				<th:block th:replace="fragments/header :: loginAndJoinHeader">header</th:block>
+			</th:block>
+			<th:block th:case="'join'">
+				<th:block th:replace="fragments/header :: loginAndJoinHeader">header</th:block>
+			</th:block>
+			
+			<th:block th:case="'home'">
+				<th:block th:replace="fragments/header :: defaultHeader">header</th:block>
+				<th:block th:replace="fragments/nav :: nav">nav</th:block>
+			</th:block>
+			
+			<th:block th:case="'detail'">
+				<th:block th:replace="fragments/header :: defaultHeader">header</th:block>
+				<th:block th:replace="fragments/nav :: nav">nav</th:block>
+			</th:block>
+			<th:block th:case="'cart'">
+				<th:block th:replace="fragments/header :: defaultHeader">header</th:block>
+				<th:block th:replace="fragments/nav :: nav">nav</th:block>
+			</th:block>
+			<th:block th:case="'category'">
+				<th:block th:replace="fragments/header :: defaultHeader">header</th:block>
+				<th:block th:replace="fragments/nav :: nav">nav</th:block>
+			</th:block>
+			<th:block th:case="'myPage'">
+				<th:block th:replace="fragments/header :: defaultHeader">header</th:block>
+				<th:block th:replace="fragments/nav :: nav">nav</th:block>
+			</th:block>
+		</th:block>
+		
+		<!-- contents -->
+		<th:block layout:fragment="contents">contents</th:block>
+		
+		<!-- footer -->
+		<th:block th:replace="fragments/footer :: footer">footer</th:block>
+		<!-- 문의 아이콘 -->
+		<th:block th:replace="fragments/inquiryBtn :: inquiryIcon">footer</th:block>
+		
+	</div>
+	
+	
+	<th:block th:replace="fragments/header :: headerScript"></th:block>
+	<th:block th:replace="fragments/inquiryBtn :: inquiryBtnScript"></th:block>
+	<th:block layout:fragment="daumFindAddress"></th:block>
+	<th:block layout:fragment="script"></th:block>
+</body>
+</html>

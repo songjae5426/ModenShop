@@ -1,0 +1,48 @@
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	layout:decorate="~{layout/basic}">
+<head>
+<title layout:fragment="title">마이페이지</title>
+<link layout:fragment="pageCss" rel="stylesheet"
+	href="/css/myPageStyle.css">
+</head>
+<body>
+	<section layout:fragment="contents" class="d-flex border border-secondary">
+		<aside class="bg-info col-2 p-0">
+			<div class="border light-gray border-secondary rounded-lg">
+				<div class="d-flex bg-white p-2">
+					<div class="rounded-circle profile-img-box">
+						<img alt="프로필사진" src="/img/Jacket.jpg"
+							class="w-100 h-100 rounded-circle">
+					</div>
+					<div class="ml-2">
+						<div class="font-weight-bolder">관리자</div>
+						<div class="small">이름</div>
+					</div>
+				</div>
+				<nav class="light-gray">
+					<ul th:fragment="nav" class="nav d-flex flex-column">
+						<li class="nav-item"><a class="nav-link text-dark" href="#">개인정보</a></li>
+						<li class="nav-item"><a class="nav-link text-dark" href="#">주문내역</a></li>
+						<li class="nav-item"><a class="nav-link text-dark" href="#">리뷰내역</a></li>
+					</ul>
+				</nav>
+			</div>
+		</aside>
+		<article class="col-10 d-flex justify-content-center align-items-center">
+			<div class="col-6">
+				<div class="h4 text-center py-3 m-0">본인인증</div>
+				<div class="mb-2">
+					<label>비밀번호</label> <input type="text" class="form-control"
+						placeholder="비밀번호를 입력해주세요..">
+				</div>
+				<button type="button" class="btn btn-primary w-100">확인</button>
+			</div>
+		</article>
+	</section>
+
+	<script layout:fragment="script">
+		
+	</script>
+</body>
+</html>

@@ -1,0 +1,150 @@
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	layout:decorate="~{layout/basic}">
+<head>
+<title layout:fragment="title">로그인</title>
+<meta charset="utf-8">
+</head>
+<body>
+	<section layout:fragment="contents">
+		<form>
+			<div class="d-flex justify-content-center pt-3 pb-5">
+				<div class="d-flex flex-column col-4">
+					<!-- 회원 타입 선택 -->
+					<div class="mb-3">
+						<label class="mr-1">회원<input type="radio"
+							name="memberType" value="generalMember" checked="checked"></label>
+						<label>관리자<input type="radio" value="managerMember"
+							name="memberType"></label>
+					</div>
+					<div class="form-group">
+						<label>이메일</label> 
+						<input id="emailInput" type="text" class="form-control">
+						<div id="emailAlarmText" class="form-text text-danger d-none">
+							<small>가입된 이메일이 없습니다</small>
+						</div>
+					</div>
+					<div class="form-group">
+						<label>비밀번호</label> 
+						<input id="passwordInput" type="password" class="form-control">
+						<div id="passwordAlarmText" class="form-text text-danger d-none">
+							<small>비밀번호가 일치하지 않습니다</small>
+						</div>
+					</div>
+					<div>
+						<button id="loginBtn" type="button" class="btn btn-secondary w-100">로그인</button>
+					</div>
+				</div>
+			</div>
+		</form>
+	</section>
+
+	<script layout:fragment="script">
+		// 이메일 패턴 만들기
+	
+	
+		// input 입력시 alarmText 초기화
+		$("#emailInput").on("keypress", function(){
+			$("#emailAlarmText").addClass("d-none");
+		});
+		$("#passwordInput").on("keypress", function(){
+			$("#passwordAlarmText").addClass("d-none");
+		});
+	
+		generalMemberLogin();
+		// 회원 타입별 input
+		$("input[name='memberType']").on("change", function() {
+			let memberType = $(this).val();
+			switch (memberType) {
+			case "generalMember":
+				$("input[type='text'], input[type='password']").val("");
+				generalMemberLogin();
+				break;
+			case "managerMember":
+				$("input[type='text'], input[type='password']").val("");
+				managerMemberLogin();
+				break;
+			}
+		});
+	
+		
+		function managerMemberLogin(){
+			// 로그인 버튼 클릭(일반 회원)
+			$("#loginBtn").off().on("click", function(){
+				let emailInput = $("#emailInput").val();
+				let passwordInput = $("#passwordInput").val();
+				if(emailInput == ""){
+					alert("이메일을 입력해주세요");
+					return;
+				}
+				if(passwordInput == ""){
+					alert("비밀번호를 입력해주세요");
+					return;
+				}
+				$.ajax({
+					url: "/moden-shop/manager/member/login",
+					type: "post",
+					contentType: "application/json",
+					data: JSON.stringify({"email": emailInput, "password": passwordInput}),
+					success: function(response){
+						switch(response.loginCheckState){
+							case "EMAIL_NOT_FOUND":
+								$("#emailAlarmText").removeClass("d-none");
+								break;
+							case "INVALID_PASSWORD":
+								$("#passwordAlarmText").removeClass("d-none");
+								break;
+							case "SUCCESS":
+								location.href = "/moden-shop/home";
+								break;
+						}
+					},
+					error:function(xhr){
+						console.log("관리자 회원 로그인ajax 에러 : " + xhr.status);
+					}
+				});
+			});
+		}
+		
+		function generalMemberLogin(){
+			// 로그인 버튼 클릭(일반 회원)
+			$("#loginBtn").off().on("click", function(){
+				let emailInput = $("#emailInput").val();
+				let passwordInput = $("#passwordInput").val();
+				if(emailInput == ""){
+					alert("이메일을 입력해주세요");
+					return;
+				}
+				if(passwordInput == ""){
+					alert("비밀번호를 입력해주세요");
+					return;
+				}
+				$.ajax({
+					url: "/moden-shop/general/Member/login",
+					type: "post",
+					contentType: "application/json",
+					data: JSON.stringify({"email": emailInput, "password": passwordInput}),
+					success: function(response){
+						console.log(response);
+						switch(response.loginCheckState){
+							case "SUCCESS":
+								location.href = "/moden-shop/home";
+								break;
+							case "EMAIL_NOT_FOUND":
+								$("#emailAlarmText").removeClass("d-none");
+								break;
+							case "INVALID_PASSWORD":
+								$("#passwordAlarmText").removeClass("d-none");
+								break;
+						}
+					},
+					erro:function(){
+						
+					}
+				});
+			});
+		}
+		
+	</script>
+</body>
+</html>

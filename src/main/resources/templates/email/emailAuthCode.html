@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<title>메일 제목</title>
+</head>
+<body>
+	<div style="width: 500px; background-color: #dcdcdc; color: black; padding-top: 10px; padding-bottom: 10px;">
+		<h1 style="text-align: center">ModenShop 인증코드</h1>
+		<div style="text-align: center">
+			안녕하세요 modenShop입니다.
+			<br>
+			회원가입을 위한 이메일 인증 코드입니다.
+			<br>
+			인증코드를 복붙해서 이메일 인증을 완료 해주세요!
+		</div>
+		<h2 th:text="${authCode}" style="color: hotPink; text-align: center; font-weight: bold"></h2>
+	</div>
+</body>
+</html>

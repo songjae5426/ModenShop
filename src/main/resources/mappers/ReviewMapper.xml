@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+ "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.songjae.modenshop.review.repository.ReviewRepositoryByMyBatis">
+	<select id="selectReviewCardFlatDtoByProductId" resultType="com.songjae.modenshop.review.dto.ReviewCardFlatDto">
+		SELECT 
+		general_member.id AS generalMemberId
+		, general_member.nickName
+		, general_member.profileImg
+		, review.id AS reviewId
+		, review.reviewTitle
+		, review.reviewText
+		, review.point
+		, review.updatedAt AS `reviewUpdatedAt`
+		FROM `general_member` 
+		JOIN `review` 
+		ON general_member.id = review.generalMemberId 
+		WHERE review.productId = #{productId}
+		ORDER BY review.updatedAt DESC
+		LIMIT #{size} OFFSET #{offset}
+	</select>
+
+</mapper>

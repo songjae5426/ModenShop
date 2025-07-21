@@ -1,0 +1,46 @@
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+	<!-- 리뷰 작성 모달 -->
+	<div th:fragment="reviewWriteModal" class="modal fade" id="reviewWriteModal" tabindex="-1"
+		aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title">리뷰 쓰기</h5>
+					<button type="button" class="close" data-dismiss="modal">
+						<span>&times;</span>
+					</button>
+				</div>
+				<div class="modal-body">
+					<form>
+						<div class="form-group">
+							<label class="col-form-label">제목</label> <input id="reviewTitleInput" type="text"
+								class="form-control" placeholder="리뷰 제목">
+						</div>
+						<div class="form-group">
+							<label class="col-form-label">리뷰 내용</label>
+							<textarea id="reviewTextTextarea" rows="6" class="form-control" placeholder="내용을 입력해주세요"></textarea>
+						</div>
+						<div>
+							<div>별점</div>
+							<div
+								class="d-flex w-100 justify-content-end text-secondary rating">
+								<div data-point="5" class="star">&#9734;</div>
+								<div data-point="4" class="star">&#9734;</div>
+								<div data-point="3" class="star">&#9734;</div>
+								<div data-point="2" class="star">&#9734;</div>
+								<div data-point="1" class="star">&#9734;</div>
+							</div>
+						</div>
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button id="cancel" type="button" class="btn btn-secondary"
+						data-dismiss="modal">취소</button>
+					<button id="reviewUpload" type="button" class="btn btn-primary">올리기</button>
+				</div>
+			</div>
+		</div>
+	</div>
+</body>
+</html>

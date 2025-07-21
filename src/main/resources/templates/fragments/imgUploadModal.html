@@ -1,0 +1,45 @@
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+   <div th:fragment="imgUploadModal" class="modal fade" id="imgUploadModal" tabindex="-1" aria-labelledby="exampleModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 id="imgUploadModalTitle" class="modal-title">프로필 사진 변경</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="w-100 preview-img-box d-flex justify-content-center align-items-center">
+                        <div id="imgUploadModalPreviewText" class="h2">이미지 미리보기</div>
+                        <img id="imgUploadModalImgPreview" alt="프로필사진미리보기" src="" class="img-contain d-none">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <div class="custom-file col-8">
+                        <input id="imgUploadModalFileInput" type="file" class="custom-file-input"
+                            aria-describedby="inputGroupFileAddon01">
+                        <label class="custom-file-label" for="inputGroupFile01">이미지 파일</label>
+                    </div>
+
+                    <button id="imgUploadModalCommitBtn" type="button" class="btn btn-primary" data-dismiss="modal">확인</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">닫기</button>
+
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script th:fragment="imgUploadModalScript">
+	    
+	    
+	    function resetImgUploadModal(){
+			$("#imgUploadModalFileInput").val("");
+			$("#imgUploadModalPreviewText").removeClass("d-none");
+			$("#imgUploadModalImgPreview").addClass("d-none");
+		}
+		function settingImgUploadModalTitle(title){
+			$("#imgUploadModalTitle").text(title);
+		}
+    </script>
+</html>

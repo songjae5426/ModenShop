@@ -1,0 +1,384 @@
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	layout:decorate="~{layout/basic}">
+<head>
+<title layout:fragment="title">상세페이지</title>
+<link layout:fragment="pageCss" rel="stylesheet"
+	href="/css/detailPageStyle.css">
+
+</head>
+<body>
+	<div layout:fragment="modalBox">
+		<th:block th:replace="fragments/reviewWriteModal :: reviewWriteModal"></th:block>
+		<th:block th:replace="fragments/buyModal :: buyModal"></th:block>
+		<th:block th:replace="fragments/productCheckModal :: productCheckModal"></th:block>
+		<th:block th:replace="fragments/alarmModal :: alarmModal"></th:block>
+	</div>
+
+
+
+	<section layout:fragment="contents">
+		<!-- 상품 정보 -->
+		<input id="productId" type="hidden"
+			th:value="${productDetailPageDto.productDetailPageItemDto.id}">
+		<article class="py-4">
+			<div class="row justify-content-center">
+				<div class="col-lg-6 col-md-8 mb-4 text-center">
+					<img
+						th:src="${productDetailPageDto.productDetailPageItemDto.productMainImg}"
+						src="/img/Jacket.jpg"
+						class="img-fluid rounded shadow-sm h-100 w-100" alt="상품 이미지">
+				</div>
+				<div class="col-lg-6 col-md-8">
+					<h3 id="name" th:attr="data-product-name=${productDetailPageDto.productDetailPageItemDto.productName}" th:text="${productDetailPageDto.productDetailPageItemDto.productName}" class="text-center font-weight-bold mb-3 text-dark">상품명</h3>
+					<div class="text-center mb-3">
+						<del
+							th:text="|${productDetailPageDto.productDetailPageItemDto.regularPrice}원|"
+							class="text-muted">50,000원</del>
+						<br> <span
+							th:text="|${productDetailPageDto.productDetailPageItemDto.discountRate}%|"
+							class="text-danger font-weight-bold">20%</span> 
+							<span id="salesPriceText" th:attr="data-sales-price=${productDetailPageDto.productDetailPageItemDto.salesPrice}" th:text="|${productDetailPageDto.productDetailPageItemDto.salesPrice}원|" class="h5 text-dark ml-2">40,000원</span>
+					</div>
+					<div
+						th:text="|배송비 : ${productDetailPageDto.productDetailPageItemDto.deliveryCost}원|"
+						class="text-center text-muted mb-3">배송비</div>
+					<div class="form-group">
+						<div class="dropdown">
+							<button
+								class="btn btn-outline-dark dropdown-toggle w-100 text-center"
+								type="button" id="sizeDropdown" data-toggle="dropdown"
+								aria-expanded="false">사이즈 선택</button>
+							<div class="dropdown-menu w-100">
+								<!-- .name()은 enum에 정의 되어있는 자바 메소드(타임리프에 객체가 넘어오면 필드 값 뿐만아니라 메소드도 사용할수있다 -->
+								<button th:each="productSizeQuantityDetailPageItemDto : ${productDetailPageDto.productSizeQuantityDetailPageItemDtoList}"
+									th:attr="data-size=${productSizeQuantityDetailPageItemDto.size.name()}"
+									class="dropdown-item d-flex justify-content-between align-items-center"> 
+									<strong th:text="${productSizeQuantityDetailPageItemDto.size.name()}">S</strong>
+									<span th:if="${productSizeQuantityDetailPageItemDto.quantity == 0}" th:text="품절" class="text-danger">품절</span> 
+									<span th:if="${productSizeQuantityDetailPageItemDto.quantity <= 10 && productSizeQuantityDetailPageItemDto.quantity > 0}" th:text="|${productSizeQuantityDetailPageItemDto.quantity}개 남음|" class="text-danger">1개 남음</span> 
+									<span th:if="${productSizeQuantityDetailPageItemDto.quantity > 10}" th:text="|${productSizeQuantityDetailPageItemDto.quantity}개 남음|" class="text-muted">1개 남음</span>
+								</button>
+							</div>
+						</div>
+
+					</div>
+					<div class="d-flex justify-content-between align-items-center my-3">
+						<div class="d-flex align-items-center">
+							<label class="mb-0 mr-3 font-weight-bold text-dark">수량</label>
+							<div class="btn-group btn-group-sm">
+								<button id="quantityMinusBtn" class="btn btn-outline-secondary">−</button>
+								<div id="quantityText" data-quantity="1" class="btn btn-light disabled">1</div>
+								<button id="quantityPlusBtn" class="btn btn-outline-secondary">＋</button>
+							</div>
+						</div>
+						<div class="h5 text-dark font-weight-bold mb-0 text-right">
+							총 가격: <span><span id="totalPriceText">0</span>원</span>
+						</div>
+					</div>
+					<div class="d-flex justify-content-center mt-4">
+						<button class="btn btn-info text-white mx-2 px-4">바로 결제</button>
+						<button id="cartBtn" class="btn btn-warning text-white mx-2 px-4">장바구니</button>
+					</div>
+				</div>
+			</div>
+		</article>
+
+		<!-- 상품 설명 -->
+		<article class="mt-5 border-top pt-4">
+			<h4 class="text-center text-dark mb-3">상품 설명</h4>
+			<div
+				th:if="${productDetailPageDto.productDetailPageItemDto.productExplanationHtml != null && productDetailPageDto.productDetailPageItemDto.productExplanationHtml != '<p><br></p>' && productDetailPageDto.productDetailPageItemDto.productExplanationHtml != ''}"
+				th:utext="${productDetailPageDto.productDetailPageItemDto.productExplanationHtml}">
+				<p class="text-center text-muted">상품 설명이 없습니다.</p>
+			</div>
+		</article>
+
+		<!-- 리뷰 리스트 -->
+		<article class="mt-5 border-top pt-4">
+			<div class="d-flex justify-content-between align-items-center mb-3">
+				<h4 class="text-dark m-0">상품 리뷰</h4>
+				<button class="btn btn-primary btn-sm" data-toggle="modal"
+					data-target="#reviewWriteModal">리뷰 작성</button>
+			</div>
+
+			<div id="reviewBox" class="row">
+				<!-- 리뷰 카드 반복 -->
+
+				<!-- 리뷰 카드 계속 추가 가능 -->
+			</div>
+			<div class="mt-4">
+				<nav>
+					<ul id="pagination" class="pagination justify-content-center">
+
+					</ul>
+				</nav>
+			</div>
+		</article>
+	</section>
+	<th:block layout:fragment="script">
+		<script
+			src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"
+			integrity="sha384-Fy6S3B9q64WdZWQUiU+q4/2Lc9npb8tCaSX9FK7E8HnRr0Jz8D6OP9dO5Vg3Q9ct"
+			crossorigin="anonymous"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/twbs-pagination/1.4.2/jquery.twbsPagination.min.js"></script>
+		<script th:replace="fragments/alarmModal :: alarmModalScript"></script>
+		<script th:replace="fragments/ProductCheckModal :: productCheckModalScript"></script>
+		<script>
+		let productId = $("#productId").val();
+		let productName = $("#name").data("product-name");
+		
+		let salesPrice = Number($("#salesPriceText").data("sales-price"));
+		let totalPrice = salesPrice;
+		let quantity = Number($("#quantityText").attr("data-quantity"))
+		let selectedSize = null;
+		
+		$(".dropdown-item").click(function () {
+		      selectedSize = $(this).data("size");
+		      // 버튼 텍스트 변경
+		      $("#sizeDropdown").text(selectedSize);
+		      // 선택된 항목에 스타일 주기
+		      $(".dropdown-item").removeClass("active");
+		      $(this).addClass("active");
+		      // 선택된 사이즈를 숨겨진 input에 저장 (필요 시)
+		      //$('#selectedSize').val(selectedSize);
+		      $("#totalPriceText").text(totalPrice);
+	    });
+		
+		$("#quantityPlusBtn").on("click", function(){
+			quantity++;
+			totalPrice = salesPrice * quantity;
+			$("#quantityText").text(quantity);
+			$("#totalPriceText").text(totalPrice);
+		});
+		
+		$("#quantityMinusBtn").on("click", function(){
+			if(quantity == 1){
+				settingAndShowAlarmModal("알림", "최소 1개 이상은 선택해야 합니다", null, null);
+			}else{
+				quantity--;
+				totalPrice = salesPrice * quantity;
+				$("#quantityText").text(quantity);
+				$("#totalPriceText").text(totalPrice);
+			}
+		});
+		
+		$("#cartBtn").on("click", function(){
+			//let productId = productId;
+			//let selectedSize = selectedSize;
+			if(selectedSize == null){
+				settingAndShowAlarmModal("알림", "사이즈를 선택해주세요", null, null);
+				return;
+			}
+			settingAndShowproductCheckModal(productName, selectedSize, quantity, totalPrice, cartAddAjax);
+		});
+		
+		function cartAddAjax(){
+			$.ajax({
+				url: "/moden-shop/general/cart/session/check",
+				type: "post",
+				contentType: "application/json",
+				data: JSON.stringify({
+				    productId: productId,
+				    selectedSize: selectedSize,
+				    selectedQuantity: quantity,
+				    salesPrice: salesPrice
+				  }),
+				  success: function(response) {
+				    alert("aa");
+				  },
+				  error: function(xhr, status, error) {
+				    console.error("에러 발생:", error);
+				  }
+			});
+		}
+		
+		
+		
+		let pageSize = 10;
+
+		// 리뷰 총 갯수 → 페이지 수 계산 → 페이징 초기화
+		$.ajax({
+		  url: "/moden-shop/review/count",
+		  type: "get",
+		  data: { productId: productId },
+		  success: function(response) {
+			  console.log(response);
+			  // ceil() 소수자리가 있으면 그보다 하나큰 정수로 반환
+		    let totalPages = Math.ceil(response.reviewCount / pageSize);
+			if(totalPages == 0){
+				totalPages = 1;
+			}
+			// twbsPagination 라이브러리 사용
+		    // 페이지 네이션 설정
+		    $("#pagination").twbsPagination({
+		      totalPages: totalPages,	// 총 페이지 수
+		      visiblePages: 5,		// 버튼 갯수
+		      startPage: 1,			// 시작 페이지
+		      first: '처음',
+		      prev: '이전',
+		      next: '다음',
+		      last: '끝',
+		      onPageClick: function (event, page) {
+		    	  	if(response.hasReview){
+			    		  loadReviewPage(page);
+				}else{
+					$("#reviewBox").html(createNotReviewCard());
+				}
+		      }
+		    });
+		  },
+		  error: function(xhr) {
+		    console.error("페이지 수 조회 실패", xhr.status);
+		  }
+		});
+
+		// 리뷰 데이터 로딩 함수
+		function loadReviewPage(page) {
+		  $.ajax({
+		    url: "/moden-shop/review/list",
+		    type: "get",
+		    data: {
+		      productId: productId,
+		      size: pageSize,	// 한페이지에 보일 컨텐츠 갯수
+		      page: page		// 조회할 페이지
+		    },
+		    success: function(response) {
+		    	console.log(response);
+	        	for (let reviewCardDto of response) {
+		          $("#reviewBox").append(createReviewCard(reviewCardDto));
+		          createStar(reviewCardDto);
+		      }
+		    },	
+		    error: function(xhr) {
+		      console.error("리뷰 로딩 실패", xhr.status);
+		    }
+		  });
+		}
+
+			
+			
+			
+			
+			
+			
+			
+			createReviewModalEvent(productId);
+			function createReviewModalEvent(productId){
+				let point = 0;
+				$(".star").on("click", function() {
+					$(".star").text("☆");
+					point = $(this).data("point");
+					$(".star").each(function(index, element) {
+						if ($(element).data("point") <= point) {
+							$(element).text("★");
+						}
+					})
+				});
+				// 모달 취소버튼 이벤트
+				$("#cancel").on("click", function(){
+					point = 0;
+					$(".star").text("☆");
+					$("#reviewTitleInput").val("");
+					$("#reviewTextTextarea").val("");
+				});
+				// 리뷰 모달이 닫힐때 이벤트
+				$("#reviewWriteModal").on("hidden.bs.modal", function(){
+					point = 0;
+					$(".star").text("☆");
+					$("#reviewTitleInput").val("");
+					$("#reviewTextTextarea").val("");
+				});
+				// 올리기 버튼 이벤트
+				$("#reviewUpload").on("click", function(){
+					let reviewTitleInput = $("#reviewTitleInput").val();
+					let reviewTextTextarea = $("#reviewTextTextarea").val();
+					if(reviewTitleInput == ""){
+						settingAndShowAlarmModal("알림", "제목을 입력해주세요" ,null ,null);
+						return;
+					}
+					if(reviewTextTextarea == ""){
+						settingAndShowAlarmModal("알림", "내용을 입력해주세요" ,null ,null);
+						return;
+					}
+					$.ajax({
+						url: "/moden-shop/general/review/write/session/check",
+						type: "post",
+						contentType: "application/json",
+						data: JSON.stringify({
+							"reviewTitle":reviewTitleInput, 
+							"reviewText": reviewTextTextarea,
+							"point": point,
+							"productId": productId}),	//자바스크립트 객체를 json문자열로 변환
+						success: function(response){
+							if(response.success){
+								console.log(response);
+								$("#reviewWriteModal").modal("hide");
+								$("#reviewBox").prepend(createReviewCard(response.reviewCardDto));
+								createStar(response.reviewCardDto);
+							}else{
+								settingAndShowAlarmModal("알림", "리뷰 업로드에 실패했습니다", null, null);
+							}
+						},
+						error: function(xhr){
+							switch(xhr.status){
+								case 401:
+									location.href="/moden-shop/login";
+									break;
+								case 403:
+									settingAndShowAlarmModal("알림", "일반회원만 사용 가능한 기능입니다", null, null);
+									break;
+							}
+						}
+					});
+				});
+			}
+			
+			
+			
+			function createStar(reviewCardDto){
+				let maxStars = 5;
+				let filled = "★".repeat(reviewCardDto.reviewCardItemDto.point);
+				let empty = "☆".repeat(maxStars - reviewCardDto.reviewCardItemDto.point);
+				let resultStar = filled + empty; 
+				$(`#point${reviewCardDto.reviewCardItemDto.id}`).text(resultStar);
+			}
+			
+			function createNotReviewCard(){
+				return `
+					<div class="w-100 mt-4 py-5 text-center text-muted">
+					  <p class="m-0">등록된 리뷰가 아직 없습니다</p>
+					</div>
+				`;
+			}
+			
+			function createReviewCard(reviewCardDto){
+				return `
+					<div class="col-12 mb-4">
+						<div class="card shadow-sm border">
+							<div class="card-body">
+								<div class="d-flex align-items-center mb-3">
+									<div class="profile-img-box">
+										<img src="${reviewCardDto.generalMemberReviewCardItemDto.profileImg}"
+											class="rounded-circle h-100 w-100" alt="프로필">
+									</div>
+									<div class="ml-3">
+										<strong>${reviewCardDto.generalMemberReviewCardItemDto.nickName}</strong><br> <small class="text-muted">${reviewCardDto.reviewCardItemDto.reviewUpdatedAt}</small>
+									</div>
+								</div>
+								<div id="point${reviewCardDto.reviewCardItemDto.id}" class="text-warning mb-2">★★★★☆</div>
+								<h6 class="font-weight-bold text-dark mb-2">${reviewCardDto.reviewCardItemDto.reviewTitle}</h6>
+								<p class="text-secondary">${reviewCardDto.reviewCardItemDto.reviewText}</p>
+								<div class="text-right d-none">
+									<button class="btn btn-sm btn-outline-danger mr-2">리뷰
+										삭제</button>
+								</div>
+							</div>
+						</div>
+					</div>
+				`;
+			}
+		</script>
+	</th:block>
+</body>
+</html>

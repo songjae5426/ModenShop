@@ -1,0 +1,50 @@
+@charset "UTF-8";
+
+.wrap{
+	width: 1200px;
+	margin: 0 auto;
+}
+
+.light-gray{
+    background-color: #dcdcdc;
+}
+
+.text-light-gray{
+	text-decoration: line-through;
+}
+
+section{
+	/* calc => css에서 쓰는 계산함수 */
+	min-height: calc(100vh - 130px);
+}
+
+.hover:hover{
+	background-color: #dcdcdc;
+	cursor: pointer;
+}
+
+.inquiry-icon-box{
+	height: 60px;
+	width: 60px;
+	position: fixed;
+	right: 10px;
+	bottom: 10px;
+}
+
+.inquiry-profile-img-box{
+    height: 40px;
+    width: 40px;
+}
+.img-contain {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: cover;
+}
+
+
+
+
+#imgUploadModal .modal-body .preview-img-box {
+    overflow: visible;
+    height: 390px;
+}

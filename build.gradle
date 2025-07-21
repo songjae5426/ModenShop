@@ -1,0 +1,58 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '3.3.13'
+	id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.songjae'
+version = '0.0.1-SNAPSHOT'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(17)
+	}
+}
+
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+	annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	// mySql 드라이버
+	runtimeOnly 'com.mysql:mysql-connector-j'
+	// 타임리프
+	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-thymeleaf'
+	implementation 'nz.net.ultraq.thymeleaf:thymeleaf-layout-dialect'
+	// 롬복
+	compileOnly 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok'
+	// p6spy 쿼리 결과 보기(바인딩 된 파라미터)
+	implementation 'com.github.gavlyukovskiy:p6spy-spring-boot-starter:1.9.0'
+	// jpa
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	// 마이바티스
+	implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.3'
+	testImplementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter-test:3.0.3'
+	// 메일(starter-mail)
+	implementation 'org.springframework.boot:spring-boot-starter-mail'
+	// 비밀번호 bccrypt로 해싱하기 위해 
+	implementation 'org.springframework.security:spring-security-crypto'
+	// josup html을 자바에서 사용
+	implementation 'org.jsoup:jsoup:1.17.2'
+	
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}

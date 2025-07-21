@@ -1,0 +1,102 @@
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	layout:decorate="~{layout/basic}">
+<head>
+<title layout:fragment="title">장바구니</title>
+<link layout:fragment="pageCss" rel="stylesheet"
+	href="/css/cartStyle.css">
+</head>
+<body>
+	<div layout:fragment="modalBox">
+		
+		<!-- 결제 모달 -->
+		<th:block th:replace="fragments/buyModal :: buyModal"></th:block>
+		<!-- 옵션 변경 모달 -->
+		<th:block th:replace="fragments/optionChangeModal :: optionChangeModal"></th:block>
+		<!-- 알람 모달 -->
+		<th:block th:replace="fragments/alarmModal :: alarmModal"></th:block>
+	</div>
+
+
+
+
+
+
+
+	<section layout:fragment="contents">
+		<article class="my-4">
+			<div class="card shadow-sm border-0">
+				<!-- 상단 컨트롤 -->
+				<div
+					class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+					<div>
+						<label class="mb-0"> <input type="checkbox" class="mr-2">
+							전체 선택
+						</label>
+					</div>
+					<button class="btn btn-sm btn-light" data-toggle="modal"
+						data-target="#alarmModal">선택 삭제</button>
+				</div>
+
+				<!-- 장바구니 리스트 -->
+				<div class="card-body p-0">
+					<!-- 상품 1개 -->
+					<div
+						class="row no-gutters align-items-center border-bottom px-3 py-3">
+						<div class="col-md-1 text-center">
+							<input type="checkbox">
+						</div>
+						<div class="col-md-2 text-center">
+							<img src="/img/Jacket.jpg" class="img-fluid rounded"
+								style="max-width: 50px;" alt="상품 이미지">
+						</div>
+						<div class="col-md-3 text-center">
+							<div class="font-weight-bold">상품명</div>
+						</div>
+						<div class="col-md-1 text-center">
+							<span>사이즈</span>
+						</div>
+						<div class="col-md-2 text-center">
+							<div class="text-danger d-none">품절 임박 5개 남음</div>
+							<div class="text-danger d-none">재고 부족 2개 남음</div>
+							<div>4개</div>
+						</div>
+						<div class="col-md-2 text-center">
+							<div class="text-danger d-none">가격이 인상 되었습니다</div>
+							<div class="text-primary d-none">가격이 하락 되었습니다</div>
+							<div>10000</div>
+						</div>
+						<div class="col-md-1 d-flex flex-column align-items-center">
+							<button class="btn btn-sm btn-outline-secondary"
+								data-toggle="modal" data-target="#optionChangeModal">
+								옵션 변경</button>
+						</div>
+					</div>
+				</div>
+
+				<!-- 결제 버튼 -->
+				<div class="card-footer bg-light text-right">
+					<button class="btn btn-success" data-toggle="modal"
+						data-target="#buyModal">결제하기</button>
+				</div>
+			</div>
+		</article>
+	</section>
+
+	<th:block layout:fragment="script">
+		<script
+			src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"
+			integrity="sha384-Fy6S3B9q64WdZWQUiU+q4/2Lc9npb8tCaSX9FK7E8HnRr0Jz8D6OP9dO5Vg3Q9ct"
+			crossorigin="anonymous"></script>
+		<script>
+			$(document).on("hidden.bs.modal", "#alarmModal", function() {
+				if ($(".modal").is(":visible")) { // modal클래스를 가진 태그가 화면에 있으면
+					$("body").addClass("modal-open");
+					$("body").attr("style", "padding-right: 15px;");
+				}
+			});
+		</script>
+	</th:block>
+
+</body>
+</html>

@@ -1,0 +1,128 @@
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	layout:decorate="~{layout/basic}">
+<head>
+<title layout:fragment="title">카테고리</title>
+<link layout:fragment="pageCss" rel="stylesheet"
+	href="/css/catrgoryStyle.css">
+</head>
+<body>
+	<section layout:fragment="contents">
+		<div class="container py-4">
+			<div class="text-center mb-5">
+				<h2 id="categoryName" th:attr="data-category=${productCategoryPageDto.category}" class="h2 font-weight-bold text-dark mb-2"
+					th:text="${productCategoryPageDto.category}">OUTER</h2>
+				<div class="mx-auto line"></div>
+				<p class="text-muted mt-3 mb-0">
+					다양한 <span th:text="${productCategoryPageDto.category}">아우터</span> 상품을 확인해보세요
+				</p>
+			</div>
+
+			<div id="productListBox" class="row">
+				
+				<th:block th:if="${productCategoryPageDto.hasProduct}" th:each="productCategoryItemDto : ${productCategoryPageDto.productCategoryItemDtoList}">
+					<div th:attr="data-product-id=${productCategoryItemDto.id}" class="product-detatil-btn col-6 col-md-4 col-lg-3 mb-4">
+						<div
+							class="card h-100 border rounded shadow-sm position-relative hover-effect">
+							<!-- 할인율 뱃지 -->
+							<div class="position-absolute badge badge-danger category-discountRate">
+								<span th:text="${productCategoryItemDto.discountRate} + '%'">30%</span>
+							</div>
+							<!-- 이미지 -->
+							<div class="img-box">
+								<img th:src="${productCategoryItemDto.productMainImg}" src="/img/knit.jpg"
+									class="card-img-top h-100 w-100" alt="상품이미지">
+							</div>
+							<!-- 본문 -->
+							<div class="card-body text-center">
+								<h6 class="card-title mb-1 font-weight-bold"
+									th:text="${productCategoryItemDto.productName}">따뜻한 니트</h6>
+								<p class="card-text mb-1">
+									<small class="text-muted">₩<span
+										th:text="${productCategoryItemDto.regularPrice}">39,900</span></small>
+								</p>
+								<p class="card-text text-success font-weight-bold h5 mb-0">
+									₩<span th:text="${productCategoryItemDto.salesPrice}">29,900</span>
+								</p>
+							</div>
+						</div>
+					</div>
+				</th:block>
+				
+				<th:block th:if="${!productCategoryPageDto.hasProduct}">
+					<div class="h1 text-center w-100 text-secondary">상품이 없습니다</div>
+				</th:block>
+			</div>
+		</div>
+	</section>
+	<script layout:fragment="script">
+		$(".product-detatil-btn").on("click", function(){
+			let productId = $(this).data("product-id");
+			location.href = `/moden-shop/detail?productId=${productId}`;
+		});
+
+		let pageCount = 1;
+		// observerOption설정 객체
+		let observerOption = {
+				root : null,			// 현재 보이는 화면을 기준 // root: document.querySelector(".scroll-container") => 해당 요소 내부를 기준(하단)
+				rootMargin : "0px",	// 요소가 화면 아래에서 부터 얼마나 떨어 졌을때 감지 할지
+				threshold : 0.0		// 요소가 화면의 하단과 얼마나 화면과 겹쳐야 감지할지 결정하는 값 (0.0:1픽셀만 겹쳐도 감지 ~ 1.0:전체가 화면에 보여야 감지)
+			}
+		// entries : observer.observer(element태그)로 등록한 객체가 화면에 나타났을떄 정보를 담은 객체들의 배열
+		// observer : IntersectionObserver객체 자기 자신
+		let observer = new IntersectionObserver(function(entries, observer) {
+			for (let i = 0; i < entries.length; i++) {
+				let entry = entries[i];
+				// isIntersecting => 등록한 요소가 화면에 보이면 true
+				if (entry.isIntersecting) {
+					let categoryName = $("#categoryName").data("category");
+					$.ajax({
+						url: "/moden-shop/category/product/page-list",
+						type: "get",
+						data: {"productCategory":categoryName, "page":pageCount},
+						success: function(response){
+							for(let productCategoryPageItemDto of response){
+								$("#productListBox").append(createProduct(productCategoryPageItemDto));
+							}
+							pageCount ++;
+						},
+						erorr: function(xhr){
+							
+						}
+					});
+				}
+			}
+		}, observerOption);
+
+		observer.observe($("footer")[0]);
+
+		function createProduct(productCategoryPageItemDto) {
+			return `
+				<div data-product-id="${productCategoryItemDto.id}" class="product-detatil-btn col-6 col-md-4 col-lg-3 mb-4">
+					<div class="card h-100 border rounded shadow-sm position-relative hover-effect">
+						<!-- 할인율 뱃지 -->
+						<div class="position-absolute badge badge-danger category-discountRate">
+							<span>${productCategoryPageItemDto.discountRate}%</span>
+						</div>
+						<!-- 이미지 -->
+						<div class="img-box">
+							<img src="${productCategoryPageItemDto.productMainImg}"
+								class="card-img-top h-100 w-100" alt="상품이미지">
+						</div>
+						<!-- 본문 -->
+						<div class="card-body text-center">
+							<h6 class="card-title mb-1 font-weight-bold">${productCategoryPageItemDto.productName}</h6>
+							<p class="card-text mb-1">
+								<small class="text-muted">₩<span>${productCategoryPageItemDto.regularPrice}</span></small>
+							</p>
+							<p class="card-text text-success font-weight-bold h5 mb-0">
+								₩<span>${productCategoryPageItemDto.salesPrice}</span>
+							</p>
+						</div>
+					</div>
+				</div>
+			`;
+		}
+	</script>
+</body>
+</html>

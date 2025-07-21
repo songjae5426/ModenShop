@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<div th:fragment="productCheckModal" class="modal fade" id="productCheckModal"
+     data-backdrop="static" data-keyboard="false" tabindex="-1"
+      aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">선택 정보 확인</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <ul class="list-group">
+          <li class="list-group-item d-flex justify-content-between">
+            <span>상품명</span>
+            <strong id="productName">M</strong>
+          </li>
+          <li class="list-group-item d-flex justify-content-between">
+            <span>사이즈</span>
+            <strong id="size">M</strong>
+          </li>
+          <li class="list-group-item d-flex justify-content-between">
+            <span>수량</span>
+            <strong id="quantity">1</strong>
+          </li>
+          <li class="list-group-item d-flex justify-content-between">
+            <span>총 가격</span>
+            <strong>₩<span id="totalPrice">19,900</span></strong>
+          </li>
+        </ul>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">닫기</button>
+        <button type="button" class="btn btn-primary" id="checkBtn" data-dismiss="modal">장바구니 담기</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script th:fragment="productCheckModalScript">
+	function settingAndShowproductCheckModal(productName, size, quantity, totalPrice, ajax){
+		$("#productName").text(productName);
+		$("#size").text(size);
+		$("#quantity").text(quantity);
+		$("#totalPrice").text(totalPrice);
+		
+		$("#checkBtn").off("click").on("click", function(){
+			ajax();
+		});
+		$("#productCheckModal").modal("show");
+	}
+	
+</script>
+</html>
